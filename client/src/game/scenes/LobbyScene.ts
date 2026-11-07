@@ -2,10 +2,9 @@
 import Phaser from 'phaser';
 import { EventBus } from '../EventBus';
 
-// Three engineering roles
 type Role = 'frontend' | 'backend' | 'devops';
 
-// Desk positions and chair positions
+// Desk and chair positions
 const desks: {
   role: Role;
   x: number;
@@ -13,43 +12,24 @@ const desks: {
   seatX: number;
   seatY: number;
 }[] = [
-  {
-    role: 'frontend',
-    x: 240,
-    y: 228,
-    seatX: 240,
-    seatY: 300
-  },
-  {
-    role: 'backend',
-    x: 480,
-    y: 228,
-    seatX: 480,
-    seatY: 300
-  },
-  {
-    role: 'devops',
-    x: 720,
-    y: 228,
-    seatX: 720,
-    seatY: 300
-  }
+  { role: 'frontend', x: 240, y: 228, seatX: 240, seatY: 300 },
+  { role: 'backend', x: 480, y: 228, seatX: 480, seatY: 300 },
+  { role: 'devops', x: 720, y: 228, seatX: 720, seatY: 300 }
 ];
 
 export default class LobbyScene extends Phaser.Scene {
-
   player!: Phaser.Physics.Arcade.Sprite;
   keys!: { [key: string]: Phaser.Input.Keyboard.Key };
   arrows!: Phaser.Types.Input.Keyboard.CursorKeys;
-  prompt!: Phaser.GameObjects.Text;
+  deskPrompt!: Phaser.GameObjects.Text;
+
+  selectedRole: Role | null = null;
 
   constructor() {
     super('LobbyScene');
   }
 
   preload() {
-
-    // Load game images
     const base = '/assets/';
 
     // Player images
@@ -60,7 +40,6 @@ export default class LobbyScene extends Phaser.Scene {
       );
     }
 
-    // Purple player directions
     this.load.image(
       'purple_back',
       base + 'characters/player_purple_back.png'
@@ -71,7 +50,7 @@ export default class LobbyScene extends Phaser.Scene {
       base + 'characters/player_purple_side.png'
     );
 
-    // Three work desks
+    // Work desks
     for (const role of ['frontend', 'backend', 'devops']) {
       this.load.image(
         'desk_' + role,
@@ -79,118 +58,62 @@ export default class LobbyScene extends Phaser.Scene {
       );
     }
 
-    // Office decorations (no boxes)
-    for (const item of [
-      'server_rack',
-      'plant',
-      'calendar'
-    ]) {
+    // Office decorations
+    for (const item of ['server_rack', 'plant', 'calendar']) {
       this.load.image(
         item,
         base + 'objects/' + item + '.png'
       );
     }
 
-    // Floor and wall
-    this.load.image(
-      'floor',
-      base + 'tiles/floor_tile.png'
-    );
-
-    this.load.image(
-      'wall',
-      base + 'tiles/wall_tile.png'
-    );
+    this.load.image('floor', base + 'tiles/floor_tile.png');
+    this.load.image('wall', base + 'tiles/wall_tile.png');
   }
 
   create() {
+    // Office floor and wall
+    this.add.tileSprite(480, 300, 960, 480, 'floor');
+    this.add.tileSprite(480, 32, 960, 64, 'wall');
+    this.add.rectangle(480, 64, 960, 5, 0x306a87);
 
-    // Create office floor
-    this.add.tileSprite(
-      480, 300, 960, 480, 'floor'
-    );
+    // One calendar
+    this.add.image(260, 94, 'calendar').setScale(0.65);
 
-    // Create office wall
-    this.add.tileSprite(
-      480, 32, 960, 64, 'wall'
-    );
+    // Servers
+    this.add.image(688, 96, 'server_rack').setScale(0.65);
+    this.add.image(758, 96, 'server_rack').setScale(0.65);
+    this.add.image(828, 96, 'server_rack').setScale(0.65);
 
-    // Wall border
-    this.add.rectangle(
-      480, 64, 960, 5, 0x306a87
-    );
+    // Plants on the upper-right side
+    this.add.image(900, 130, 'plant').setScale(0.58);
+    this.add.image(900, 210, 'plant').setScale(0.58);
 
-    // One calendar on the wall
-    this.add.image(
-      260, 94, 'calendar'
-    ).setScale(0.65);
-
-    // Server racks
-    this.add.image(
-      688, 96, 'server_rack'
-    ).setScale(0.65);
-
-    this.add.image(
-      758, 96, 'server_rack'
-    ).setScale(0.65);
-
-    this.add.image(
-      828, 96, 'server_rack'
-    ).setScale(0.65);
-
-    // Plants
-    // Move plants away from the UI panels
-    this.add.image(
-      120, 430, 'plant'
-    ).setScale(0.58);
-
-    this.add.image(
-      900, 130, 'plant'
-    ).setScale(0.58);
-
-    // Create the three work desks
+    // Work desks
     for (const desk of desks) {
-
       this.add.image(
         desk.x,
         desk.y,
         'desk_' + desk.role
-      )
-      .setScale(0.70)
-      .setDepth(2);
+      ).setScale(0.70).setDepth(2);
     }
 
     // Temporary teammates
-    // These will be replaced by real multiplayer later
-    this.add.image(
-      340, 395, 'white'
-    )
-    .setScale(0.65)
-    .setDepth(4);
+    this.add.image(340, 395, 'white')
+      .setScale(0.65).setDepth(4);
 
-    this.add.image(
-      630, 395, 'yellow'
-    )
-    .setScale(0.65)
-    .setDepth(4);
+    this.add.image(630, 395, 'yellow')
+      .setScale(0.65).setDepth(4);
 
-    // Create the controllable player
-    this.player = this.physics.add.sprite(
-      480, 400, 'purple'
-    );
-
+    // Local player
+    this.player = this.physics.add.sprite(480, 400, 'purple');
     this.player.setScale(0.65);
     this.player.setDepth(5);
     this.player.setCollideWorldBounds(true);
-
-    // Player collision size
     this.player.setSize(43, 21);
     this.player.setOffset(22, 76);
 
     // Desk collision
-    // Players cannot walk through the tables
     for (const desk of desks) {
-
       const wall = this.add.zone(
         desk.x,
         desk.y - 27,
@@ -202,41 +125,48 @@ export default class LobbyScene extends Phaser.Scene {
       this.physics.add.collider(this.player, wall);
     }
 
-    // Keyboard controls
+    // Keyboard
     this.keys = this.input.keyboard!.addKeys(
-      'W,A,S,D,E'
+      'W,A,S,D,E',
+      false
     ) as typeof this.keys;
 
-    this.arrows =
-      this.input.keyboard!.createCursorKeys();
+    this.arrows = this.input.keyboard!.createCursorKeys();
 
-    // Instructions
-    this.prompt = this.add.text(
-      480,
-      493,
-      'WASD to move | Go to a chair and press E',
-      {
-        fontFamily: 'Arial',
-        fontSize: '16px',
-        color: '#ffffff',
-        backgroundColor: '#1b3158',
-        padding: {
-          x: 12,
-          y: 8
-        }
-      }
+    // Text above the computer
+    this.deskPrompt = this.add.text(0, 0, '', {
+      fontFamily: 'Arial',
+      fontSize: '17px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      backgroundColor: '#172849',
+      padding: { x: 12, y: 7 },
+      align: 'center'
+    });
+
+    this.deskPrompt.setOrigin(0.5);
+    this.deskPrompt.setDepth(20);
+    this.deskPrompt.setVisible(false);
+  }
+
+  // Show text directly above the selected computer
+  showPrompt(
+    desk: (typeof desks)[number],
+    message: string
+  ) {
+    this.deskPrompt.setPosition(
+      desk.x,
+      desk.y - 90
     );
 
-    this.prompt.setOrigin(0.5);
-    this.prompt.setScrollFactor(0);
-    this.prompt.setDepth(10);
+    this.deskPrompt.setText(message);
+    this.deskPrompt.setVisible(true);
   }
 
   update() {
-
     if (!this.player) return;
 
-    // Stop player movement while typing in chat
+    // Disable movement while typing in chat
     const element = document.activeElement;
 
     if (
@@ -247,27 +177,52 @@ export default class LobbyScene extends Phaser.Scene {
       return;
     }
 
+    const pressedE = Phaser.Input.Keyboard.JustDown(
+      this.keys.E
+    );
+
+    // Role already selected
+    if (this.selectedRole) {
+      this.player.setVelocity(0);
+
+      const desk = desks.find(
+        d => d.role === this.selectedRole
+      );
+
+      if (desk) {
+        const name =
+          desk.role.charAt(0).toUpperCase() +
+          desk.role.slice(1);
+
+        this.showPrompt(
+          desk,
+          name + ' selected - Press E to cancel'
+        );
+      }
+
+      // Press E again to cancel
+      if (pressedE) {
+        this.selectedRole = null;
+
+        EventBus.dispatchEvent(
+          new CustomEvent('role-changed', {
+            detail: null
+          })
+        );
+      }
+
+      return;
+    }
+
+    // Normal movement
     let x = 0;
     let y = 0;
 
-    // WASD and arrow keys
-    if (this.keys.A.isDown || this.arrows.left.isDown) {
-      x = -1;
-    }
+    if (this.keys.A.isDown || this.arrows.left.isDown) x = -1;
+    if (this.keys.D.isDown || this.arrows.right.isDown) x = 1;
+    if (this.keys.W.isDown || this.arrows.up.isDown) y = -1;
+    if (this.keys.S.isDown || this.arrows.down.isDown) y = 1;
 
-    if (this.keys.D.isDown || this.arrows.right.isDown) {
-      x = 1;
-    }
-
-    if (this.keys.W.isDown || this.arrows.up.isDown) {
-      y = -1;
-    }
-
-    if (this.keys.S.isDown || this.arrows.down.isDown) {
-      y = 1;
-    }
-
-    // Keep diagonal movement at the same speed
     const length = Math.sqrt(x * x + y * y) || 1;
 
     this.player.setVelocity(
@@ -275,27 +230,22 @@ export default class LobbyScene extends Phaser.Scene {
       y / length * 170
     );
 
-    // Change character direction
+    // Player direction
     if (y < 0) {
-
       this.player.setTexture('purple_back');
-
+      this.player.setFlipX(false);
     } else if (x !== 0) {
-
       this.player.setTexture('purple_side');
       this.player.setFlipX(x < 0);
-
     } else if (y > 0) {
-
       this.player.setTexture('purple');
       this.player.setFlipX(false);
     }
 
-    // Check if the player is near a chair
-    let close: Role | null = null;
+    // Find a nearby chair
+    let closeDesk: (typeof desks)[number] | null = null;
 
     for (const desk of desks) {
-
       const distance = Phaser.Math.Distance.Between(
         this.player.x,
         this.player.y,
@@ -303,37 +253,37 @@ export default class LobbyScene extends Phaser.Scene {
         desk.seatY
       );
 
-      // Only allow interaction close to the chair
       if (distance < 32) {
-        close = desk.role;
+        closeDesk = desk;
+        break;
       }
     }
 
-    // Show interaction message
-    if (close) {
+    if (closeDesk) {
+      const name =
+        closeDesk.role.charAt(0).toUpperCase() +
+        closeDesk.role.slice(1);
 
-      this.prompt.setText(
-        'Press E to choose ' + close
+      this.showPrompt(
+        closeDesk,
+        name + ' - Press E to select'
       );
 
+      // Press E to select role
+      if (pressedE) {
+        this.selectedRole = closeDesk.role;
+        this.player.setVelocity(0);
+        this.player.setTexture('purple');
+        this.player.setFlipX(false);
+
+        EventBus.dispatchEvent(
+          new CustomEvent('role-changed', {
+            detail: this.selectedRole
+          })
+        );
+      }
     } else {
-
-      this.prompt.setText(
-        'Move to a chair and press E'
-      );
-    }
-
-    // Press E to select a role
-    if (
-      close &&
-      Phaser.Input.Keyboard.JustDown(this.keys.E)
-    ) {
-
-      EventBus.dispatchEvent(
-        new CustomEvent('choose-role', {
-          detail: close
-        })
-      );
+      this.deskPrompt.setVisible(false);
     }
   }
 }
