@@ -1,0 +1,44 @@
+# CODE RED! - Git Ignore
+
+# Downloaded libraries
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+build/
+coverage/
+.vite/
+.cache/
+
+# Environment variables and private keys
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Windows files
+Thumbs.db
+Desktop.ini
+
+# macOS files
+.DS_Store
+
+# VS Code local settings
+.vscode/
+
+# IDE files
+.idea/
+
+# TypeScript cache
+*.tsbuildinfo
