@@ -1,1 +1,2 @@
-// Passes events between Phaser gameplay and React UI components.
+// Phaser sends simple events to React through this object.
+export const EventBus = new EventTarget();

@@ -1,1 +1,5 @@
-// Vite configuration for the frontend development server and build process.
+// Vite settings for our React game.
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({ plugins: [react()] });
