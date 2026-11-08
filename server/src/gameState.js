@@ -91,6 +91,45 @@ export function setReady(room, playerId, ready) {
   return { room };
 }
 
+// ---------- starting the mission ----------
+
+// When each room's mission started, so step 7 can work out how long the team took.
+// A WeakMap is like a Map, but it forgets a room automatically once that room is deleted.
+// We keep this here instead of on the room so it isn't sent to every browser.
+const missionStartTimes = new WeakMap();
+
+// game:start — the host presses Start Mission.
+export function startMission(room, playerId) {
+  if (room.stage !== 'lobby') return { error: 'NOT_IN_LOBBY' };
+
+  // 1. Only the host can start.
+  if (room.hostId !== playerId) return { error: 'NOT_HOST' };
+
+  // 2. Exactly 3 players.
+  if (room.players.length !== 3) return { error: 'NOT_ENOUGH_PLAYERS' };
+
+  // 3. Every role has a player. (selectRole already stops two players sharing a role,
+  //    so if all 3 roles are taken by 3 players, each player has a different one.)
+  const allRolesTaken = ROLES.every(role => room.players.some(p => p.role === role));
+
+  // 4. Everyone is ready.
+  const allReady = room.players.every(p => p.ready);
+
+  if (!allRolesTaken || !allReady) return { error: 'NOT_ALL_READY' };
+
+  // All good: start the mission with a clean scoreboard.
+  room.stage = 'mission';
+  room.progress = { frontend: false, backend: false, devops: false };
+  missionStartTimes.set(room, Date.now());
+  return { room };
+}
+
+// How many milliseconds since this room's mission started. (Used in step 7.)
+export function getMissionDuration(room) {
+  const startedAt = missionStartTimes.get(room);
+  return startedAt ? Date.now() - startedAt : 0;
+}
+
 // ---------- team chat ----------
 
 const MAX_CHAT_LENGTH = 200;
