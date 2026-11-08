@@ -419,3 +419,12 @@ html, body, #root { min-height: 100%; }
   .app-mission .cr-explorer { width: 140px; }
   .app-mission .cr-ide { right: 9px; }
 }
+
+
+
+/* Lobby mission board - bottom right */
+.app-lobby .lobby-mission-card {
+  left: auto;
+  right: 24px;
+  bottom: 36px;
+}
