@@ -1,4 +1,4 @@
-/* CODE RED! — minimal room entrance; scoped to this screen. */
+/* CODE RED! — two-row room entrance. Only this screen is restyled. */
 .room-entry {
   min-height: 100vh;
   width: 100%;
@@ -8,7 +8,7 @@
   box-sizing: border-box;
   color: #f5f7ff;
   background:
-    radial-gradient(ellipse at 50% 40%, rgba(75, 49, 115, .21), transparent 65%),
+    radial-gradient(ellipse at 50% 40%, rgba(75, 49, 115, 0.21), transparent 65%),
     #0c1427;
 }
 
@@ -16,29 +16,30 @@
   width: min(100%, 752px);
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 26px;
 }
 
+/* Original CODE RED! logo — unchanged. */
 .room-entry-logo {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 10px;
   font: 900 clamp(29px, 5vw, 39px) / 1 'Courier New', monospace;
-  letter-spacing: -.9px;
-  text-shadow: 0 4px 26px rgba(0, 0, 0, .35);
+  letter-spacing: -0.9px;
+  text-shadow: 0 4px 26px rgba(0, 0, 0, 0.35);
 }
-.room-entry-logo-mark { color: #e94b69; font-size: .85em; }
+.room-entry-logo-mark { color: #e94b69; font-size: 0.85em; }
 .room-entry-logo em { color: #ff5476; font-style: normal; }
 
 .room-entry-panel {
   box-sizing: border-box;
   width: 100%;
-  padding: 18px 13px 13px;
+  padding: 22px 18px 18px;
   border: 1px solid #566989;
   border-radius: 13px;
   background: #1d2b45;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, .3);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
 }
 
 .room-entry-kicker {
@@ -48,11 +49,21 @@
 }
 
 .room-entry-panel h1 {
-  margin: 0 0 19px;
+  margin: 0 0 23px;
   color: #fff;
   font: 800 20px/1.2 Arial, sans-serif;
-  letter-spacing: -.35px;
+  letter-spacing: -0.35px;
 }
+
+/* First row: name + room code + join button. */
+.room-entry-join-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 165px;
+  align-items: end;
+  gap: 14px;
+}
+
+.room-entry-field { min-width: 0; }
 
 .room-entry-label {
   display: block;
@@ -76,42 +87,45 @@
 .room-entry-input::placeholder { color: #99a9c1; opacity: 1; }
 .room-entry-input:focus {
   border-color: #9671d3;
-  box-shadow: 0 0 0 3px rgba(150, 113, 211, .2);
+  box-shadow: 0 0 0 3px rgba(150, 113, 211, 0.2);
 }
-.room-entry-input:disabled { opacity: .65; }
+.room-entry-input:disabled { opacity: 0.65; }
+.room-entry-code { text-transform: uppercase; }
 
-.room-entry-create,
-.room-entry-join {
-  height: 50px;
+.room-entry-join,
+.room-entry-create {
+  box-sizing: border-box;
+  height: 52px;
   border: none;
   border-radius: 7px;
   color: #fff;
   cursor: pointer;
   font: 800 16px Arial, sans-serif;
-  transition: filter .15s ease, transform .15s ease;
+  transition: filter 0.15s ease, transform 0.15s ease;
 }
+.room-entry-join {
+  width: 100%;
+  white-space: nowrap;
+  background: #49336e;
+}
+
+/* Second row: full-width create button with a clear gap above it. */
+.room-entry-create-form { margin-top: 26px; }
 .room-entry-create {
   width: 100%;
-  margin-top: 13px;
   background: #e13c5c;
 }
-.room-entry-join { flex: none; padding: 0 16px; background: #49336e; }
-.room-entry-create:hover:not(:disabled),
-.room-entry-join:hover:not(:disabled) { filter: brightness(1.15); transform: translateY(-1px); }
-.room-entry-create:disabled,
-.room-entry-join:disabled { cursor: not-allowed; opacity: .72; }
 
-.room-entry-separator {
-  text-align: center;
-  padding: 15px 0 13px;
-  color: #93a2bd;
-  font: 12px Arial, sans-serif;
+.room-entry-join:hover:not(:disabled),
+.room-entry-create:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
 }
-.room-entry-join-row { display: flex; gap: 8px; }
-.room-entry-code { flex: 1; min-width: 0; text-transform: uppercase; }
+.room-entry-join:disabled,
+.room-entry-create:disabled { cursor: not-allowed; opacity: 0.72; }
 
 .room-entry-error {
-  margin-top: 12px;
+  margin-top: 14px;
   padding: 10px 12px;
   color: #ffdce4;
   background: #4f2037;
@@ -119,9 +133,13 @@
   border-radius: 7px;
   font-size: 13px;
 }
-.room-entry-status { margin-top: 11px; font-size: 12px; color: #aabdd9; }
+.room-entry-status {
+  margin-top: 11px;
+  font-size: 12px;
+  color: #aabdd9;
+}
 
-/* Used by the existing Lobby top bar after a successful join. */
+/* Keep this: App.tsx uses it in the existing Lobby top bar. */
 .room-session-tag {
   display: inline-block;
   margin-left: 10px;
@@ -131,11 +149,17 @@
   white-space: nowrap;
 }
 
-@media (max-width: 520px) {
-  .room-entry-content { gap: 18px; }
-  .room-entry-panel { padding: 17px 12px 12px; }
-  .room-entry-join { font-size: 13px; padding: 0 10px; }
+/* On narrow screens, keep everything visible without horizontal scrolling. */
+@media (max-width: 680px) {
+  .room-entry-panel { padding: 19px 14px 14px; }
+  .room-entry-join-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+  .room-entry-join { grid-column: 1 / -1; }
+  .room-entry-create-form { margin-top: 18px; }
+}
+@media (max-width: 380px) {
+  .room-entry-join-form { grid-template-columns: 1fr; }
+  .room-entry-join { grid-column: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .room-entry-create, .room-entry-join { transition: none; }
+  .room-entry-join, .room-entry-create { transition: none; }
 }
