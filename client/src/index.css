@@ -10,6 +10,9 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .app { min-height: 100vh; display: flex; flex-direction: column; background: #0a1223; }
 .top-bar { display: flex; align-items: center; gap: 22px; flex-wrap: nowrap; height: 79px; flex-shrink: 0; padding: 9px 24px; background: #080e19; border-bottom: 2px solid #222b43; }
 .brand { font-size: 30px; white-space: nowrap; font-family: var(--app-font); letter-spacing: -1px; }
+.brand-home { background: transparent; border: 0; padding: 0 2px; color: inherit; font: inherit; line-height: inherit; border-radius: 3px; }
+.brand-home:hover { color: #ffc236; }
+.brand-home:focus-visible { outline: 2px solid #ffc236; outline-offset: 3px; }
 .brand strong { color: white; }
 .brand em { color: #ff4059; font-style: normal; }
 .stage-heading { color: #e5e8f4; font-weight: bold; font-size: 20px; white-space: nowrap; }

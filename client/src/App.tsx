@@ -349,7 +349,7 @@ export default function App() {
     });
   }
 
-  // Results screen -> back to Room Entry. To replay, the team creates a new room.
+  // Leave the current room and return to Room Entry.
   function leaveRoom() {
     if (socket.connected) socket.emit('room:leave', {});
     clearRoom();
@@ -363,6 +363,9 @@ export default function App() {
     setJoinedRoom(null);
     setMyPlayerId('');
     setMessages([]);
+    setChatOpen(false);
+    setMessage('');
+    setChatError('');
     setLobbyError('');
     setDurationMs(0);
     setStarting(false);
@@ -388,7 +391,12 @@ export default function App() {
   return (
     <div className={'app ' + (stage === 'lobby' ? 'app-lobby' : 'app-mission')}>
       <header className="top-bar">
-        <div className="brand">▣ <strong>CODE <em>RED!</em></strong></div>
+        <div className="brand">
+          <button type="button" className="brand-home" onClick={leaveRoom}
+            title="Leave room and return to Room Entry"
+            aria-label="Leave room and return to Room Entry">▣</button>{' '}
+          <strong>CODE <em>RED!</em></strong>
+        </div>
         <div className="stage-heading">
           {stage === 'lobby' ? 'Team Lobby' : stage === 'mission' ? 'Mission 01: ' + title : 'Mission Complete'}
           <span className="room-session-tag">
