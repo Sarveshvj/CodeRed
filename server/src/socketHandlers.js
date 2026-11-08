@@ -5,7 +5,7 @@
 // Event names and data shapes come from shared/socket-contract.md.
 
 import { createRoom, joinRoom, leaveRoom, getRoom } from './rooms.js';
-import { movePlayer } from './gameState.js';
+import { movePlayer, selectRole, cancelRole, setReady } from './gameState.js';
 
 // Called once for every player who connects.
 // `io` = the whole server (can talk to everyone). `socket` = this one player's connection.
@@ -25,6 +25,29 @@ export function registerSocketHandlers(io, socket) {
 
     const room = leaveRoom(code, socket.id);
     if (room) sendRoomUpdate(room); // tell the players still inside
+  }
+
+  // Shared by role:select, role:cancel and player:ready, which all work the same way:
+  //   1. find this player's room   2. apply a rule from gameState.js
+  //   3. reply to this player      4. if it worked, show everyone the new room
+  // `applyRule` is the rule to run. Each listener below passes in a different one.
+  function handleLobbyRequest(reply, applyRule) {
+    if (typeof reply !== 'function') reply = () => {};
+
+    const room = getRoom(socket.data.roomCode);
+    if (!room) {
+      reply({ ok: false, error: 'NOT_IN_ROOM' });
+      return;
+    }
+
+    const result = applyRule(room);
+    if (result.error) {
+      reply({ ok: false, error: result.error });
+      return;
+    }
+
+    reply({ ok: true });
+    sendRoomUpdate(room);
   }
 
   // ---------- room:join ----------
@@ -70,6 +93,24 @@ export function registerSocketHandlers(io, socket) {
 
     // socket.to(...) means "everyone in the room EXCEPT me". The mover already knows where they are.
     socket.to(room.code).emit('player:moved', move);
+  });
+
+  // ---------- role:select ----------
+  // data = { role }. Pressing E at a desk.
+  socket.on('role:select', (data, reply) => {
+    handleLobbyRequest(reply, (room) => selectRole(room, socket.id, data?.role));
+  });
+
+  // ---------- role:cancel ----------
+  // data = {}. Pressing E again to leave the desk.
+  socket.on('role:cancel', (data, reply) => {
+    handleLobbyRequest(reply, (room) => cancelRole(room, socket.id));
+  });
+
+  // ---------- player:ready ----------
+  // data = { ready: true | false }. Pressing R.
+  socket.on('player:ready', (data, reply) => {
+    handleLobbyRequest(reply, (room) => setReady(room, socket.id, data?.ready));
   });
 
   // ---------- room:leave ----------

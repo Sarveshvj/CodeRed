@@ -35,3 +35,58 @@ export function movePlayer(room, playerId, data) {
 
   return { id: playerId, x, y, facing, flipX };
 }
+
+// ---------- roles and ready ----------
+// Each function below returns { room } if the request is allowed, or { error } if not.
+// (Same pattern as rooms.js.)
+
+const ROLES = ['frontend', 'backend', 'devops'];
+
+// role:select — pressing E at a desk.
+export function selectRole(room, playerId, role) {
+  if (room.stage !== 'lobby') return { error: 'NOT_IN_LOBBY' };
+
+  const player = room.players.find(p => p.id === playerId);
+  if (!player) return { error: 'NOT_IN_ROOM' };
+
+  if (!ROLES.includes(role)) return { error: 'INVALID_ROLE' };
+
+  // Is somebody ELSE already sitting at this desk? (Picking your own role again is fine.)
+  const owner = room.players.find(p => p.role === role && p.id !== playerId);
+  if (owner) return { error: 'ROLE_TAKEN' };
+
+  // Switching from another role simply replaces it, so the old desk becomes free.
+  player.role = role;
+  // Changing role always un-readies you, so nobody starts with a surprise role.
+  player.ready = false;
+  return { room };
+}
+
+// role:cancel — pressing E again to stand up from the desk.
+export function cancelRole(room, playerId) {
+  if (room.stage !== 'lobby') return { error: 'NOT_IN_LOBBY' };
+
+  const player = room.players.find(p => p.id === playerId);
+  if (!player) return { error: 'NOT_IN_ROOM' };
+
+  player.role = null;
+  player.ready = false;
+  return { room };
+}
+
+// player:ready — pressing R.
+export function setReady(room, playerId, ready) {
+  if (room.stage !== 'lobby') return { error: 'NOT_IN_LOBBY' };
+
+  const player = room.players.find(p => p.id === playerId);
+  if (!player) return { error: 'NOT_IN_ROOM' };
+
+  // Only a real `true` counts as ready. Anything else (false, "yes", missing) counts as not ready.
+  const wantsReady = ready === true;
+
+  // You can't be ready without a role. (Becoming NOT ready is always allowed.)
+  if (wantsReady && !player.role) return { error: 'NO_ROLE' };
+
+  player.ready = wantsReady;
+  return { room };
+}
