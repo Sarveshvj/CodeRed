@@ -25,7 +25,7 @@
   justify-content: center;
   align-items: center;
   gap: 10px;
-  font: 900 clamp(29px, 5vw, 39px) / 1 'Courier New', monospace;
+  font: 900 clamp(36px, 6vw, 48px) / 1 var(--app-font);
   letter-spacing: -0.9px;
   text-shadow: 0 4px 26px rgba(0, 0, 0, 0.35);
 }
@@ -45,13 +45,13 @@
 .room-entry-kicker {
   margin-bottom: 13px;
   color: #f276a4;
-  font: 12px 'Courier New', monospace;
+  font: 15px var(--app-font);
 }
 
 .room-entry-panel h1 {
   margin: 0 0 23px;
   color: #fff;
-  font: 800 20px/1.2 Arial, sans-serif;
+  font: 800 26px/1.2 var(--app-font);
   letter-spacing: -0.35px;
 }
 
@@ -69,7 +69,7 @@
   display: block;
   margin-bottom: 8px;
   color: #ccd8eb;
-  font: 13px Arial, sans-serif;
+  font: 16px var(--app-font);
 }
 
 .room-entry-input {
@@ -82,7 +82,7 @@
   outline: 0;
   background: #0d172b;
   color: #f4f8ff;
-  font: 16px Arial, sans-serif;
+  font: 20px var(--app-font);
 }
 .room-entry-input::placeholder { color: #99a9c1; opacity: 1; }
 .room-entry-input:focus {
@@ -100,7 +100,7 @@
   border-radius: 7px;
   color: #fff;
   cursor: pointer;
-  font: 800 16px Arial, sans-serif;
+  font: 800 20px var(--app-font);
   transition: filter 0.15s ease, transform 0.15s ease;
 }
 .room-entry-join {
@@ -131,11 +131,11 @@
   background: #4f2037;
   border: 1px solid #bb5271;
   border-radius: 7px;
-  font-size: 13px;
+  font-size: 16px;
 }
 .room-entry-status {
   margin-top: 11px;
-  font-size: 12px;
+  font-size: 15px;
   color: #aabdd9;
 }
 
@@ -144,7 +144,7 @@
   display: inline-block;
   margin-left: 10px;
   color: #95ddc1;
-  font: 10px 'Courier New', monospace;
+  font: 22px var(--app-font);
   vertical-align: middle;
   white-space: nowrap;
 }

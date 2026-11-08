@@ -108,7 +108,7 @@ export default class LobbyScene extends Phaser.Scene {
       up: 'UP', down: 'DOWN', left: 'LEFT', right: 'RIGHT',
     }, false) as Record<string, Phaser.Input.Keyboard.Key>;
     this.prompt = this.add.text(0, 0, '', {
-      fontFamily: 'Arial', fontSize: '17px', fontStyle: 'bold', color: '#ffffff',
+      fontFamily: '"Squada One", sans-serif', fontSize: '21px', fontStyle: 'bold', color: '#ffffff',
       backgroundColor: '#1b3158', padding: { x: 10, y: 7 },
     }).setOrigin(0.5).setDepth(12).setVisible(false);
 
@@ -170,7 +170,7 @@ export default class LobbyScene extends Phaser.Scene {
         const sprite = this.add.image(teammate.x, teammate.y, teammate.avatar)
           .setScale(0.67).setDepth(5);
         const label = this.add.text(teammate.x, teammate.y - 64, teammate.name, {
-          fontFamily: 'Arial', fontSize: '13px', color: '#ffffff',
+          fontFamily: '"Squada One", sans-serif', fontSize: '16px', color: '#ffffff',
           backgroundColor: '#1b3158', padding: { x: 5, y: 3 },
         }).setOrigin(0.5).setDepth(8);
         remote = { sprite, label, targetX: teammate.x, targetY: teammate.y };

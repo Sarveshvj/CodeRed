@@ -106,17 +106,17 @@ export default class MissionScene extends Phaser.Scene {
       this.role === 'backend' ? 'DB' : '↑';
 
     this.add.text(215, 190, symbol, {
-      fontFamily: 'Arial', fontSize: '20px', fontStyle: 'bold',
+      fontFamily: '"Squada One", sans-serif', fontSize: '24px', fontStyle: 'bold',
       color: '#47dfff'
     }).setDepth(5);
 
     this.add.text(255, 187, name, {
-      fontFamily: 'Arial', fontSize: '17px', fontStyle: 'bold',
+      fontFamily: '"Squada One", sans-serif', fontSize: '21px', fontStyle: 'bold',
       color: '#ffffff'
     }).setDepth(5);
 
     this.add.text(255, 208, 'Your Role Station', {
-      fontFamily: 'Arial', fontSize: '11px',
+      fontFamily: '"Squada One", sans-serif', fontSize: '13px',
       color: '#d8e1ee'
     }).setDepth(5);
   }
