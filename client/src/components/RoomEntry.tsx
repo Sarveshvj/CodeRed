@@ -131,6 +131,7 @@ export default function RoomEntry({ onJoined }: Props) {
   return (
     <div className="room-entry">
       <main className="room-entry-content">
+        {/* Keep the original CODE RED! logo. */}
         <div className="room-entry-logo" aria-label="CODE RED!">
           <span className="room-entry-logo-mark">▣</span>
           <strong>CODE <em>RED!</em></strong>
@@ -140,35 +141,35 @@ export default function RoomEntry({ onJoined }: Props) {
           <div className="room-entry-kicker">TEAM ASSEMBLY</div>
           <h1 id="room-entry-title">Enter the war room.</h1>
 
-          <form onSubmit={createRoom}>
-            <label className="room-entry-label" htmlFor="room-player-name">PLAYER NAME</label>
-            <input
-              id="room-player-name"
-              className="room-entry-input"
-              type="text"
-              placeholder="Your callsign..."
-              maxLength={16}
-              value={name}
-              onChange={event => { setName(event.target.value); setError(''); }}
-              autoComplete="nickname"
-              disabled={busy !== null}
-            />
-            <button
-              className="room-entry-create"
-              type="submit"
-              disabled={busy !== null || !name.trim()}
-            >
-              {busy === 'create' ? 'CONNECTING...' : 'CREATE NEW ROOM ↗'}
-            </button>
-          </form>
-
-          <div className="room-entry-separator">— OR JOIN YOUR CREW —</div>
-
-          <form onSubmit={joinRoom}>
-            <div className="room-entry-join-row">
+          {/* First row: name, room code, and Join Team. */}
+          <form className="room-entry-join-form" onSubmit={joinRoom}>
+            <div className="room-entry-field">
+              <label className="room-entry-label" htmlFor="room-player-name">
+                PLAYER NAME
+              </label>
               <input
+                id="room-player-name"
+                className="room-entry-input"
+                type="text"
+                placeholder="Your callsign..."
+                maxLength={16}
+                value={name}
+                onChange={event => {
+                  setName(event.target.value);
+                  setError('');
+                }}
+                autoComplete="nickname"
+                disabled={busy !== null}
+              />
+            </div>
+
+            <div className="room-entry-field">
+              <label className="room-entry-label" htmlFor="room-code">
+                ROOM CODE
+              </label>
+              <input
+                id="room-code"
                 className="room-entry-input room-entry-code"
-                aria-label="Four-letter room code"
                 type="text"
                 inputMode="text"
                 autoComplete="off"
@@ -181,18 +182,34 @@ export default function RoomEntry({ onJoined }: Props) {
                 }}
                 disabled={busy !== null}
               />
-              <button
-                className="room-entry-join"
-                type="submit"
-                disabled={busy !== null || !name.trim() || roomCode.length !== 4}
-              >
-                {busy === 'join' ? 'JOINING...' : 'JOIN TEAM →'}
-              </button>
             </div>
+
+            <button
+              className="room-entry-join"
+              type="submit"
+              disabled={busy !== null || !name.trim() || roomCode.length !== 4}
+            >
+              {busy === 'join' ? 'JOINING...' : 'JOIN TEAM →'}
+            </button>
+          </form>
+
+          {/* Second row: full-width Create New Room button. */}
+          <form className="room-entry-create-form" onSubmit={createRoom}>
+            <button
+              className="room-entry-create"
+              type="submit"
+              disabled={busy !== null || !name.trim()}
+            >
+              {busy === 'create' ? 'CONNECTING...' : 'CREATE NEW ROOM ↗'}
+            </button>
           </form>
 
           {error && <div className="room-entry-error" role="alert">⚠ {error}</div>}
-          {busy && <div className="room-entry-status" role="status">{connected ? 'Connected. Joining room...' : 'Connecting to server...'}</div>}
+          {busy && (
+            <div className="room-entry-status" role="status">
+              {connected ? 'Connected. Joining room...' : 'Connecting to server...'}
+            </div>
+          )}
         </section>
       </main>
     </div>
