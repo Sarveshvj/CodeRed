@@ -27,7 +27,7 @@ type PlayerMovement = {
 export default class LobbyScene extends Phaser.Scene {
   player!: Phaser.Physics.Arcade.Sprite;
   keys!: Record<string, Phaser.Input.Keyboard.Key>;
-  arrows!: Phaser.Types.Input.Keyboard.CursorKeys;
+  arrows!: Record<string, Phaser.Input.Keyboard.Key>;
   prompt!: Phaser.GameObjects.Text;
   selectedRole: Role | null = null;
 
@@ -43,6 +43,19 @@ export default class LobbyScene extends Phaser.Scene {
   private roleError = '';
 
   constructor() { super('LobbyScene'); }
+
+  // Phaser reuses this scene object when it restarts (back from a mission),
+  // so clear the per-run state. Clearing myId makes the next sync place the
+  // new sprite at the server's position.
+  init() {
+    this.myId = '';
+    this.selectedRole = null;
+    this.rolePending = false;
+    this.roleError = '';
+    this.lastMoveSent = 0;
+    this.facing = 'front';
+    this.flipX = false;
+  }
 
   preload() {
     const base = import.meta.env.BASE_URL + 'assets/';
@@ -90,7 +103,10 @@ export default class LobbyScene extends Phaser.Scene {
 
     // false allows typing W/A/S/D in chat without preventing the keystroke.
     this.keys = this.input.keyboard!.addKeys('W,A,S,D,E', false) as Record<string, Phaser.Input.Keyboard.Key>;
-    this.arrows = this.input.keyboard!.createCursorKeys();
+    // Read arrow keys without blocking typing in the editor or chat.
+    this.arrows = this.input.keyboard!.addKeys({
+      up: 'UP', down: 'DOWN', left: 'LEFT', right: 'RIGHT',
+    }, false) as Record<string, Phaser.Input.Keyboard.Key>;
     this.prompt = this.add.text(0, 0, '', {
       fontFamily: 'Arial', fontSize: '17px', fontStyle: 'bold', color: '#ffffff',
       backgroundColor: '#1b3158', padding: { x: 10, y: 7 },

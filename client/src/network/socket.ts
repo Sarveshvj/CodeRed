@@ -57,7 +57,9 @@ export type ErrorCode =
   | 'INVALID_CODE'
   | 'CODE_TOO_LONG'
   | 'NOT_ALL_COMPLETE'
-  | 'ALREADY_COMPLETE';
+  | 'ALREADY_COMPLETE'
+  | 'REVIEW_IN_PROGRESS'
+  | 'REVIEW_UNAVAILABLE';
 
 export type Ack<T extends object = object> =
   | ({ ok: true } & T)

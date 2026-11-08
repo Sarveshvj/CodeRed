@@ -7,7 +7,7 @@
 import { createRoom, joinRoom, leaveRoom, getRoom } from './rooms.js';
 import {
   movePlayer, selectRole, cancelRole, setReady, startMission, createChatMessage,
-  checkCanSubmit, getMissionStartTime, recordPass,
+  checkCanSubmit, getMissionStartTime, recordPass, deployMission,
 } from './gameState.js';
 import { reviewSubmission } from './challenges.js';
 
@@ -53,7 +53,7 @@ export function registerSocketHandlers(io, socket) {
     }
 
     reply({ ok: true });
-    announce(room);
+    announce(room, result); // `result` carries extras, like durationMs for deploy
   }
 
   // ---------- room:join ----------
@@ -196,6 +196,20 @@ export function registerSocketHandlers(io, socket) {
         console.log(`Room ${room.code}: ${role} passed (${update.completed}/3)`);
       }
     }
+  });
+
+  // ---------- deployment:request ----------
+  // data = {}. The host clicks Deploy to Production once Team Progress is 3/3.
+  // On success, everyone gets mission:complete and shows the results screen.
+  socket.on('deployment:request', (data, reply) => {
+    handleRequest(
+      reply,
+      (room) => deployMission(room, socket.id),
+      (room, result) => {
+        io.to(room.code).emit('mission:complete', { room, durationMs: result.durationMs });
+        console.log(`Room ${room.code} deployed! Mission complete in ${Math.round(result.durationMs / 1000)}s`);
+      },
+    );
   });
 
   // ---------- chat:send ----------
