@@ -1,244 +1,421 @@
-
-/* CODE RED! Game UI */
-
-* {
-  box-sizing: border-box;
+/* CODE RED! Lobby + Mission UI. Student-friendly CSS. */
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; min-width: 850px; }
+body { background: #080f1c; color: #e8edf7; font-family: Arial, Helvetica, sans-serif; }
+button { font-family: inherit; cursor: pointer; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.app { min-height: 100vh; display: flex; flex-direction: column; background: #0a1223; }
+.top-bar { display: flex; align-items: center; gap: 22px; flex-wrap: nowrap; height: 79px; flex-shrink: 0; padding: 9px 24px; background: #080e19; border-bottom: 2px solid #222b43; }
+.brand { font-size: 24px; white-space: nowrap; font-family: 'Courier New', monospace; letter-spacing: -1px; }
+.brand strong { color: white; }
+.brand em { color: #ff4059; font-style: normal; }
+.stage-heading { color: #e5e8f4; font-weight: bold; white-space: nowrap; }
+.progress-badge { background: #0e1829; border: 1px solid #253044; border-radius: 8px; padding: 10px; font-size: 13px; margin-left: auto; white-space: nowrap; }
+.progress-badge b { color: #ffc236; margin-left: 12px; }
+.players { margin-left: auto; display: flex; gap: 22px; justify-content: flex-end; }
+.app-mission .players { margin-left: 0; }
+.player-badge { display: flex; gap: 6px; align-items: center; min-width: 112px; font-size: 12px; }
+.player-badge img { width: 43px; height: 54px; object-fit: contain; image-rendering: pixelated; }
+.player-badge small { display: block; margin-top: 5px; color: #9faec8; }
+.game-screen { position: relative; flex: 1 1 auto; min-height: 580px; overflow: hidden; background: radial-gradient(ellipse at 35% 40%,#42304e,#101629 65%,#0a1121); }
+.phaser-world { position: absolute; inset: 0; overflow: hidden; }
+#game-area { width: 100%; height: 100%; }
+#game-area canvas { display: block; }
+.app-lobby .game-screen { min-height: 620px; }
+.lobby-mission-card { position: absolute; left: 24px; bottom: 36px; background: #ebf3fa; color: #223456; border: 4px solid #2f5279; border-radius: 10px; padding: 13px 20px; z-index: 3; }
+.lobby-mission-card h2 { font-size: 21px; margin: 5px 0 12px; }
+.lobby-mission-card p { font-size: 13px; margin: 8px 0; }
+.eyebrow { font-weight: bold; letter-spacing: 1px; font-size: 14px; color: #ff536e; }
+.lobby-mission-card .eyebrow { color: #243a63; }
+.lobby-instructions { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); padding: 10px 15px; background: rgba(12,28,56,.88); border-radius: 8px; font-size: 13px; white-space: nowrap; }
+.lobby-footer { background: #101f39; height: 68px; display:flex; flex-shrink:0; justify-content:center; align-items:center; gap:15px; padding: 8px; }
+.lobby-footer button { padding: 11px 20px; border: 0; border-radius: 7px; background:#80e778; font-weight: bold; }
+.lobby-footer .start-button { background: #36b6f0; color: #03101e; }
+.demo-note { font-size: 11px; color: #9eacc7; }
+.mission-card { position: absolute; left: 23px; top: 36px; width: min(420px, 38%); display: flex; gap: 14px; padding: 20px 22px; background: rgba(34,7,24,.88); border: 2px solid #ff3159; box-shadow: 0 0 18px #e5324c50, inset 0 0 13px #f32b482a; border-radius: 9px; z-index: 3; }
+.mission-warning { color: #ff4766; font-size: 36px; }
+.mission-card h2 { font-size: 20px; margin: 8px 0 14px; }
+.mission-card p { font-size: 15px; margin: 9px 0; }
+.mission-card p span { display: inline-block; color: #a4adc0; width: 24px; font-size: 18px; }
+.mission-card p span.checked { color: #6bdf9b; }
+.station-sign { position: absolute; left: 15%; bottom: 13%; background: rgba(18,18,32,.83); border: 1px solid #ffa83d; color:#ffdba0; box-shadow:0 0 20px #ef8d434b; border-radius: 9px; padding: 11px 17px; z-index: 2; font-weight: bold; letter-spacing: 1px; font-size: 12px; }
+.game-chat { position:absolute; left: 18px; bottom: 18px; z-index: 13; width:320px; max-width:40%; color:white; }
+.game-chat.chat-open { padding:11px; background:rgba(8,19,37,.31); border-left:2px solid #6cbadd; border-radius:6px; }
+.game-chat.chat-closed { pointer-events:none; }
+.chat-heading { font-size:12px; font-weight: bold; padding-bottom:8px; border-bottom:1px solid #456481; }
+.chat-history { display:flex; flex-direction:column; gap:4px; }
+.chat-open .chat-history { height: 145px; overflow:auto; padding:8px 0; scrollbar-width:thin; }
+.chat-closed .chat-history { max-height:100px; overflow:hidden; }
+.chat-line { font-size:12px; line-height:1.5; overflow-wrap:anywhere; text-shadow: 0 1px 3px #000; }
+.chat-line b { color:#7bcefa; }
+.game-chat form input { margin-top:5px; width:100%; border:1px solid #648ba7; padding:9px; background:rgba(7,21,43,.8); color:white; outline:none; }
+.game-chat form small { display:block; text-align:right; font-size:10px; color:#becce1; padding-top:4px; }
+@media (max-width: 1180px) {
+  .top-bar { gap:12px; padding:8px 12px; }
+  .brand { font-size:19px; }
+  .stage-heading { font-size:12px; }
+  .players { gap:8px; }
+  .player-badge { min-width: 70px; }
+  .player-badge img { width:30px; height:38px; }
+  .player-badge small { display:none; }
+  .code-workspace { width:57%; right:10px; }
+  .workspace-explorer { width:125px; }
+  .workspace-activity { width:34px; }
+  .mission-card { width:38%; padding:10px; }
+  .mission-card h2 { font-size:15px; }
+  .mission-card p { font-size:11px; }
+  .station-sign { display:none; }
 }
 
-body {
-  margin: 0;
-  background: #09172e;
-  color: white;
-  font-family: Arial, sans-serif;
-}
-
-button {
-  cursor: pointer;
-  border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-weight: bold;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Main game layout */
-
-.app {
-  max-width: 1200px;
-  margin: auto;
-}
-
-/* Player bar */
-
-.top-bar {
-  min-height: 110px;
-  background: #132440;
+/* Real code editor: React, CSS, and Monaco. No editor background image. */
+.cr-ide {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  bottom: 20px;
+  width: 53%;
+  z-index: 10;
   display: flex;
-  align-items: center;
-  padding: 12px;
-  gap: 25px;
-}
-
-.player-count {
-  min-width: 120px;
-  font-weight: bold;
-}
-
-.player-list {
-  display: flex;
-  flex: 1;
-  justify-content: space-around;
-  gap: 10px;
-}
-
-.player-card {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.player-card img {
-  width: 53px;
-  height: 60px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-
-.player-card small {
-  display: block;
-  color: #b7c6d9;
-  font-size: 12px;
-  margin-top: 3px;
-}
-
-.green {
-  color: #5be69b !important;
-}
-
-/* Phaser game */
-
-.game-wrapper {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 9;
+  flex-direction: column;
   overflow: hidden;
-  background: #74bedb;
+  border: 1px solid #6b8eae;
+  border-radius: 9px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  box-shadow: 0 10px 35px #0009;
+  font-family: Arial, sans-serif;
 }
-
-#game-area {
-  width: 100%;
-  height: 100%;
+.cr-ide-fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  border: none;
+  border-radius: 0;
+  z-index: 1000;
 }
-
-#game-area canvas {
-  display: block;
-}
-
-/* Mission board - bottom left */
-
-.mission-board {
-  position: absolute;
-  left: 1%;
-  bottom: 4%;
-  background: #edf3fa;
-  color: #21385b;
-  padding: 14px;
-  border: 4px solid #31486c;
-  border-radius: 10px;
-  font-size: 13px;
-  z-index: 5;
-}
-
-.mission-board h3 {
-  margin: 8px 0;
-}
-
-.mission-board p {
-  margin: 9px 0;
-}
-
-/* Bottom controls */
-
-.bottom-bar {
+.cr-ide-title {
+  height: 44px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 15px;
-  padding: 12px;
-  background: #132440;
+  justify-content: space-between;
+  padding: 0 10px 0 14px;
+  background: #181818;
+  border-bottom: 1px solid #3a3a3a;
+  font-size: 13px;
 }
-
-.bottom-bar button {
-  background: #8bea69;
-}
-
-/* Transparent game chat */
-
-.valorant-chat {
-  position: absolute;
-  right: 2%;
-  bottom: 3%;
-  width: 320px;
-  max-width: 45%;
-  color: white;
-  font-family: Arial, sans-serif;
-  font-size: 14px;
-  z-index: 20;
-}
-
-/* Open chat */
-
-.valorant-chat-open {
-  background: rgba(8, 20, 40, 0.3);
-  border-left: 2px solid rgba(110, 190, 230, 0.5);
-  border-radius: 4px;
-  padding: 10px;
-  pointer-events: auto;
-}
-
-/* Closed chat */
-
-.valorant-chat-closed {
-  background: transparent;
-  border: none;
+.cr-vs-logo { color: #22a8e8; font-size: 22px; margin-right: 8px; }
+.cr-fullscreen-btn {
+  width: 34px;
+  height: 32px;
   padding: 0;
-  pointer-events: none;
+  background: #252526;
+  color: white;
+  border: 1px solid #666;
+  border-radius: 4px;
+  font-size: 21px;
+  cursor: pointer;
 }
-
-/* Chat title */
-
-.valorant-title {
-  font-weight: bold;
-  color: #c2eaff;
-  margin-bottom: 8px;
-  font-size: 13px;
+.cr-ide-body { display: flex; flex: 1; min-height: 0; }
+.cr-activity-bar {
+  width: 44px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 15px 0;
+  background: #181818;
+  color: #a4a4a4;
+  border-right: 1px solid #333;
+  font-size: 24px;
 }
-
-/* Chat messages */
-
-.valorant-history {
-  width: 100%;
-}
-
-.valorant-chat-open .valorant-history {
-  height: 190px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: #6b93b0 transparent;
-}
-
-.valorant-chat-closed .valorant-history {
-  max-height: 110px;
+.cr-gear { margin-top: auto; }
+.cr-explorer {
+  width: 160px;
+  flex-shrink: 0;
+  padding-top: 10px;
+  background: #252526;
+  border-right: 1px solid #333;
+  font-size: 12px;
   overflow: hidden;
 }
-
-/* Message text */
-
-.valorant-line {
-  font-size: 13px;
-  line-height: 1.4;
-  color: white;
-  margin-bottom: 5px;
-  overflow-wrap: anywhere;
-  text-shadow:
-    1px 1px 3px #000,
-    0 0 5px #000;
-  transition: opacity 1s ease;
-}
-
-/* Player name */
-
-.valorant-name {
-  color: #81dfff;
-  font-weight: bold;
-}
-
-/* Chat input */
-
-.valorant-input {
+.cr-explorer-heading { padding: 8px 12px; color: #c8c8c8; font-size: 11px; }
+.cr-folder { padding: 8px 12px; white-space: nowrap; }
+.cr-subfolder { padding-left: 22px; }
+.cr-explorer button {
+  display: block;
   width: 100%;
-  margin-top: 8px;
-  padding: 9px;
-  background: rgba(15, 30, 55, 0.6);
-  border: 1px solid rgba(120, 190, 230, 0.6);
-  border-radius: 3px;
-  outline: none;
+  padding: 8px 7px 8px 26px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  color: #ddd;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.cr-explorer button:hover { background: #303032; }
+.cr-explorer button.cr-selected { background: #094771; }
+.cr-editor-main { display: flex; flex: 1; min-width: 0; min-height: 0; flex-direction: column; }
+.cr-editor-tab {
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  background: #252526;
+  border-bottom: 1px solid #333;
+  font-size: 12px;
+}
+.cr-editor-tab small { color: #999; }
+.cr-monaco-box { flex: 1 1 auto; min-height: 120px; background: #1e1e1e; }
+.cr-terminal-tabs {
+  height: 42px;
+  flex-shrink: 0;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 0 9px;
+  background: #181818;
+  border-top: 1px solid #353535;
+}
+.cr-terminal-tabs button:not(.cr-run-btn) {
+  padding: 9px 4px;
+  color: #aaa;
+  background: transparent;
+  border: 0;
+  font-size: 11px;
+  cursor: pointer;
+}
+.cr-terminal-tabs button.cr-active { color: #fff; border-bottom: 2px solid #3794ff; }
+.cr-run-btn {
+  margin-left: auto;
+  padding: 8px 11px;
+  border: 0;
+  border-radius: 4px;
+  background: #7744dc;
   color: white;
-  font-size: 13px;
-}anxia 
-
-.valorant-input:focus {
-  border-color: #8deaff;
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.cr-terminal-output {
+  flex: 0 0 28%;
+  min-height: 90px;
+  overflow: auto;
+  padding: 12px 16px;
+  background: #181818;
+  font: 12px/1.6 Consolas, 'Courier New', monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cr-error { color: #ff7777; }
+.cr-success { color: #80db9c; }
+.cr-hint { color: #f4d36f; }
+.cr-command { color: #75c8ef; }
+.cr-status-bar {
+  height: 23px;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 9px;
+  color: white;
+  background: #007acc;
+  font-size: 10px;
+}
+@media (max-width: 1100px) {
+  .cr-ide { width: 60%; right: 8px; }
+  .cr-ide-fullscreen { width: 100vw; right: 0; }
+  .cr-explorer { width: 115px; }
+  .cr-activity-bar { width: 35px; }
 }
 
-.valorant-hint {
-  font-size: 10px;
-  color: #b5c5d6;
-  margin-top: 5px;
-  text-align: right;
+/* Screen-size improvements */
+html, body, #root { min-height: 100%; }
+.game-screen { min-height: 590px; }
+.cr-ide { min-height: 380px; }
+.cr-ide-fullscreen { top:0!important; bottom:0!important; left:0!important; right:0!important; width:100vw!important; height:100vh!important; max-width:none!important; border-radius:0!important; }
+@media (max-width: 720px) {
+  .top-bar { gap:6px; padding: 5px 8px; }
+  .brand { font-size:16px; }
+  .players { gap:2px; }
+  .player-badge { min-width:40px; font-size:10px; }
+  .player-badge img { width:26px; height:34px; }
+  .stage-heading { display:none; }
+  .cr-ide { width:65%; right:4px; top:8px; bottom:8px; }
+  .cr-explorer { display:none; }
+  .cr-activity-bar { width:30px; font-size:16px; }
+  .cr-ide-fullscreen .cr-explorer { display:block; width:130px; }
+  .cr-terminal-tabs { gap:4px; }
+  .cr-terminal-tabs button:not(.cr-run-btn) { font-size:10px; }
+  .mission-card { max-width:32%; }
+  .lobby-mission-card { left:8px; bottom:52px; }
+}
+
+
+/* =========================================================
+   Mission visual update: reference-image layout
+   Only applies to the Mission screen, not the Lobby.
+   ========================================================= */
+
+/* Top bar */
+.app-mission .top-bar {
+  background: #070d19;
+  border-bottom: 1px solid #252b43;
+}
+.app-mission .brand {
+  font-size: 27px;
+}
+.app-mission .stage-heading {
+  font-size: 18px;
+}
+
+/* Dark purple room */
+.app-mission .game-screen {
+  background: #1c1831;
+}
+
+/* Large red mission board on the wall */
+.app-mission .mission-card {
+  left: 10%;
+  top: 34px;
+  width: 29%;
+  max-width: 460px;
+  min-height: 210px;
+  padding: 23px 22px;
+  background: rgba(36, 7, 26, 0.92);
+  border: 2px solid #ff345b;
+  border-radius: 7px;
+  box-shadow: 0 0 12px rgba(240, 38, 70, .6), inset 0 0 15px rgba(255, 36, 83, .15);
+}
+.app-mission .mission-warning {
+  font-size: 38px;
+  line-height: 1.3;
+}
+.app-mission .eyebrow {
+  font-size: 15px;
+}
+.app-mission .mission-card h2 {
+  font-size: 20px;
+  margin: 8px 0 13px;
+}
+.app-mission .mission-card p {
+  margin: 9px 0;
+  font-size: 15px;
+}
+
+/* Role label is now drawn at the workstation in MissionScene.ts */
+.app-mission .station-sign {
+  display: none;
+}
+
+/* Real VS Code-style editor, not a PNG */
+.app-mission .cr-ide {
+  width: 53%;
+  top: 18px;
+  right: 16px;
+  bottom: 18px;
+  background: #101828;
+  border: 1px solid #8196b2;
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .58);
+}
+.app-mission .cr-ide-title {
+  height: 49px;
+  background: linear-gradient(180deg, #202b40, #172135);
+  border-bottom: 1px solid #38455f;
+  font-size: 15px;
+}
+.app-mission .cr-activity-bar {
+  width: 47px;
+  background: #111a2a;
+  border-right: 1px solid #3c4960;
+  color: #bfcce0;
+}
+.app-mission .cr-explorer {
+  width: 178px;
+  background: #111c31;
+  border-right: 1px solid #33435d;
+  font-size: 13px;
+}
+.app-mission .cr-explorer-heading {
+  color: #bcc8d9;
+  font-size: 12px;
+}
+.app-mission .cr-explorer button {
+  font-size: 13px;
+}
+.app-mission .cr-explorer button.cr-selected {
+  background: #1d426f;
+}
+.app-mission .cr-editor-tab {
+  background: #1d2a41;
+  border-bottom: 1px solid #304665;
+  font-size: 13px;
+}
+.app-mission .cr-terminal-tabs {
+  background: #101a2c;
+  border-top: 1px solid #354a68;
+  height: 47px;
+}
+.app-mission .cr-terminal-tabs button:not(.cr-run-btn) {
+  font-size: 12px;
+  color: #c3d0e1;
+}
+.app-mission .cr-terminal-output {
+  flex: 0 0 31%;
+  background: #0b1425;
+  color: #e1e9f5;
+  font: 13px/1.6 Consolas, 'Courier New', monospace;
+  border-top: 1px solid #233954;
+}
+.app-mission .cr-run-btn {
+  background: #853cf1;
+  color: white;
+  padding: 9px 16px;
+  font-size: 13px;
+  box-shadow: 0 0 12px rgba(143, 59, 255, .45);
+}
+.app-mission .cr-status-bar {
+  background: #162840;
+  border-top: 1px solid #33506e;
+}
+.app-mission .cr-fullscreen-btn {
+  color: #ffffff;
+  background: #182238;
+  border: 1px solid #ffcf70;
+  box-shadow: 0 0 8px rgba(255, 212, 105, .25);
+}
+
+/* Keep fullscreen at 100% of the browser viewport. */
+.app-mission .cr-ide.cr-ide-fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  border: none;
+  border-radius: 0;
+  z-index: 1000;
+}
+
+@media (max-width: 1180px) {
+  .app-mission .mission-card {
+    top: 25px;
+    left: 7%;
+    width: 32%;
+    padding: 13px;
+    min-height: 165px;
+  }
+  .app-mission .mission-card h2 { font-size: 16px; }
+  .app-mission .mission-card p { font-size: 12px; }
+  .app-mission .cr-explorer { width: 140px; }
+  .app-mission .cr-ide { right: 9px; }
 }

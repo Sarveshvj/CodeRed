@@ -1,6 +1,7 @@
-// Create the Phaser game inside the React page.
+// Phaser holds both the lobby scene and the mission scene.
 import Phaser from 'phaser';
 import LobbyScene from './scenes/LobbyScene';
+import MissionScene from './scenes/MissionScene';
 
 export function createGame() {
   return new Phaser.Game({
@@ -8,7 +9,7 @@ export function createGame() {
     parent: 'game-area',
     width: 960,
     height: 540,
-    backgroundColor: '#74bedb',
+    backgroundColor: '#111629',
     pixelArt: true,
     scale: {
       mode: Phaser.Scale.FIT,
@@ -18,6 +19,6 @@ export function createGame() {
       default: 'arcade',
       arcade: { debug: false },
     },
-    scene: [LobbyScene],
+    scene: [LobbyScene, MissionScene],
   });
 }

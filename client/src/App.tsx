@@ -1,272 +1,166 @@
-
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import GameCanvas from './components/GameCanvas';
+import CodeWorkspace from './components/CodeWorkspace';
 import { EventBus } from './game/EventBus';
+import { challenges, type Role } from './game/data/challenges';
 
-type Role = 'frontend' | 'backend' | 'devops';
+type Message = { text: string; time: number; user: string };
 
-type Message = {
-  user: string;
-  text: string;
-  time: number;
-};
-
-const players = [
-  { name: 'You', avatar: 'purple' },
-  { name: 'Player 2 (demo)', avatar: 'white' },
-  { name: 'Player 3 (demo)', avatar: 'yellow' }
+const demoPlayers = [
+  { name: 'You', image: 'purple' },
+  { name: 'Player 2 (demo)', image: 'white' },
+  { name: 'Player 3 (demo)', image: 'yellow' },
 ];
 
 export default function App() {
   const [role, setRole] = useState<Role | null>(null);
   const [ready, setReady] = useState(false);
-
-  // Chat
+  const [stage, setStage] = useState<'lobby' | 'mission'>('lobby');
+  const [complete, setComplete] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
-  const [input, setInput] = useState('');
+  const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
   const [now, setNow] = useState(Date.now());
-
   const chatInput = useRef<HTMLInputElement>(null);
   const chatHistory = useRef<HTMLDivElement>(null);
 
-  // Get the selected role from Phaser
+  // Existing LobbyScene emits this event when E selects/cancels a role.
   useEffect(() => {
     function roleChanged(event: Event) {
-      const newRole =
-        (event as CustomEvent<Role | null>).detail;
-
-      setRole(newRole);
+      setRole((event as CustomEvent<Role | null>).detail);
       setReady(false);
     }
-
     EventBus.addEventListener('role-changed', roleChanged);
-
-    return () => {
-      EventBus.removeEventListener('role-changed', roleChanged);
-    };
+    return () => EventBus.removeEventListener('role-changed', roleChanged);
   }, []);
 
-  // Timer for hiding old chat messages
   useEffect(() => {
-    const timer = setInterval(() => {
-      setNow(Date.now());
-    }, 250);
-
-    return () => clearInterval(timer);
+    const timer = window.setInterval(() => setNow(Date.now()), 400);
+    return () => window.clearInterval(timer);
   }, []);
 
-  // Focus the input after pressing T
   useEffect(() => {
-    if (chatOpen) {
-      chatInput.current?.focus();
-    }
+    if (chatOpen) chatInput.current?.focus();
   }, [chatOpen]);
 
-  // Scroll to newest message
   useEffect(() => {
     if (chatOpen && chatHistory.current) {
-      chatHistory.current.scrollTop =
-        chatHistory.current.scrollHeight;
+      chatHistory.current.scrollTop = chatHistory.current.scrollHeight;
     }
   }, [chatOpen, messages]);
 
-  // Keyboard controls
   useEffect(() => {
-    function keyPressed(event: KeyboardEvent) {
+    function keyDown(event: KeyboardEvent) {
       if (event.key === 'Escape' && chatOpen) {
-        event.preventDefault();
-        setChatOpen(false);
-        chatInput.current?.blur();
-        return;
+        event.preventDefault(); setChatOpen(false); chatInput.current?.blur(); return;
       }
-
-      const element = document.activeElement;
-
-      const typing =
-        element?.tagName === 'INPUT' ||
-        element?.tagName === 'TEXTAREA';
-
+      const focused = document.activeElement;
+      const typing = focused?.tagName === 'INPUT' || focused?.tagName === 'TEXTAREA'
+        || focused?.getAttribute('role') === 'textbox';
       if (typing) return;
-
-      // Open chat
+      // Do not steal keyboard shortcuts from the Monaco editor.
+      if (stage === 'mission' && document.activeElement?.closest('.code-workspace')) return;
       if (event.key.toLowerCase() === 't' && !event.repeat) {
-        event.preventDefault();
-        setChatOpen(true);
+        event.preventDefault(); setChatOpen(true);
       }
-
-      // Toggle Ready
-      if (
-        event.key.toLowerCase() === 'r' &&
-        role &&
-        !event.repeat
-      ) {
-        setReady(old => !old);
+      if (stage === 'lobby' && role && event.key.toLowerCase() === 'r' && !event.repeat) {
+        setReady(value => !value);
       }
     }
+    window.addEventListener('keydown', keyDown);
+    return () => window.removeEventListener('keydown', keyDown);
+  }, [role, stage, chatOpen]);
 
-    window.addEventListener('keydown', keyPressed);
-
-    return () => {
-      window.removeEventListener('keydown', keyPressed);
-    };
-  }, [role, chatOpen]);
-
-  // Send message with Enter
   function sendMessage(event: FormEvent) {
     event.preventDefault();
-
-    const text = input.trim();
-
-    if (text) {
-      setMessages(old => [
-        ...old,
-        {
-          user: 'You',
-          text: text,
-          time: Date.now()
-        }
-      ]);
+    if (message.trim()) {
+      setMessages(old => [...old, { text: message.trim(), user: 'You', time: Date.now() }]);
     }
-
-    setInput('');
-    setChatOpen(false);
-    chatInput.current?.blur();
+    setMessage(''); setChatOpen(false); chatInput.current?.blur();
   }
 
-  // Show all history when open, recent messages when closed
-  const visibleMessages = chatOpen
-    ? messages
-    : messages.filter(
-        msg => now - msg.time < 8000
-      ).slice(-4);
+  function startDemo() {
+    if (!role || !ready) return;
+    setStage('mission'); setComplete(false);
+    EventBus.dispatchEvent(new CustomEvent('mission:start', { detail: role }));
+  }
+
+  const shown = chatOpen ? messages : messages.filter(m => now - m.time < 8000).slice(-4);
+  const avatar = (name: string) => import.meta.env.BASE_URL + 'assets/characters/player_' + name + '.png';
+  const title = role ? challenges[role].title : 'Launch Day';
 
   return (
-    <div className="app">
-
-      {/* Top player bar */}
-      <div className="top-bar">
-        <span className="player-count">
-          3 / 3 (local demo)
-        </span>
-
-        <div className="player-list">
-          {players.map((player, i) => (
-            <div className="player-card" key={player.name}>
-              <img
-                src={
-                  '/assets/characters/player_' +
-                  player.avatar + '.png'
-                }
-                alt={player.name}
-              />
-
-              <div>
-                <b>{player.name}</b>
-
-                <small>
-                  {i === 0
-                    ? role || 'No role'
-                    : 'Waiting for server'}
-                </small>
-
-                <small className={
-                  i === 0 && ready ? 'green' : ''
-                }>
-                  {i === 0 && ready ? 'Ready' : 'Not Ready'}
-                </small>
-              </div>
+    <div className={'app ' + (stage === 'mission' ? 'app-mission' : 'app-lobby')}>
+      <header className="top-bar">
+        <div className="brand">▣ <strong>CODE <em>RED!</em></strong></div>
+        <div className="stage-heading">{stage === 'lobby' ? 'Team Lobby' : 'Mission 01: ' + title}</div>
+        {stage === 'mission' && <div className="progress-badge">Team Progress <b>{complete ? '1 / 3' : '0 / 3'}</b></div>}
+        <div className="players">
+          {demoPlayers.map((player, i) => (
+            <div className="player-badge" key={player.name}>
+              <img src={avatar(player.image)} alt="" />
+              <div><b>{i === 0 ? 'You' : 'Teammate ' + i}</b>
+              <small>{i === 0 ? (role || 'No role') : 'Demo'}</small></div>
             </div>
           ))}
         </div>
-      </div>
+      </header>
 
-      {/* Game map */}
-      <div className="game-wrapper">
-        <GameCanvas />
+      <main className="game-screen">
+        <div className="phaser-world"><GameCanvas /></div>
 
-        {/* Mission board */}
-        <div className="mission-board">
-          <b>MISSION 01</b>
-          <h3>Launch Day</h3>
-          <p>☐ Fix critical bugs</p>
-          <p>☐ Pass tests</p>
-          <p>☐ Deploy to production</p>
-        </div>
-
-        {/* Transparent chat */}
-        {(chatOpen || visibleMessages.length > 0) && (
-          <div className={
-            chatOpen
-              ? 'valorant-chat valorant-chat-open'
-              : 'valorant-chat valorant-chat-closed'
-          }>
-
-            {chatOpen && (
-              <div className="valorant-title">
-                TEAM CHAT
+        {stage === 'lobby' ? (
+          <>
+            <section className="lobby-mission-card">
+              <div className="eyebrow">MISSION 01</div>
+              <h2>Launch Day</h2>
+              <p>☐ Fix critical bugs</p><p>☐ Pass tests</p><p>☐ Deploy to production</p>
+            </section>
+            <div className="lobby-instructions">WASD move · E select/cancel role · R ready · T chat</div>
+          </>
+        ) : (
+          <>
+            <section className="mission-card">
+              <div className="mission-warning">⚠</div>
+              <div>
+                <div className="eyebrow">MISSION 01</div>
+                <h2>{title}</h2>
+                <p><span className={complete ? 'checked' : ''}>{complete ? '☑' : '☐'}</span> Fix the bug</p>
+                <p><span className={complete ? 'checked' : ''}>{complete ? '☑' : '☐'}</span> Pass all tests</p>
+                <p><span>☐</span> Sync with your team</p>
               </div>
-            )}
-
-            <div
-              className="valorant-history"
-              ref={chatHistory}
-            >
-              {visibleMessages.map((msg, i) => {
-                const age = now - msg.time;
-
-                const opacity =
-                  chatOpen || age < 6500 ? 1 : 0;
-
-                return (
-                  <div
-                    className="valorant-line"
-                    key={i}
-                    style={{ opacity }}
-                  >
-                    <span className="valorant-name">
-                      [{msg.user}]
-                    </span>
-                    {' '}{msg.text}
-                  </div>
-                );
-              })}
-            </div>
-
-            {chatOpen && (
-              <form onSubmit={sendMessage}>
-                <input
-                  ref={chatInput}
-                  className="valorant-input"
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  placeholder="Send a message..."
-                />
-
-                <div className="valorant-hint">
-                  ENTER to send | ESC to close
-                </div>
-              </form>
-            )}
-          </div>
+            </section>
+            <div className="station-sign">✦ {role?.toUpperCase()} WORKSTATION ✦</div>
+            <CodeWorkspace role={role || 'frontend'} onComplete={() => setComplete(true)} />
+          </>
         )}
-      </div>
 
-      {/* Bottom bar */}
-      <div className="bottom-bar">
-        <span>Role: {role || 'None'}</span>
+        {(chatOpen || shown.length > 0) && (
+          <section className={'game-chat ' + (chatOpen ? 'chat-open' : 'chat-closed')}>
+            {chatOpen && <div className="chat-heading">◉ TEAM CHAT</div>}
+            <div className="chat-history" ref={chatHistory}>
+              {shown.map((line, i) => <div className="chat-line" key={i}><b>[{line.user}]</b> {line.text}</div>)}
+            </div>
+            {chatOpen && <form onSubmit={sendMessage}>
+              <input ref={chatInput} value={message} onChange={e => setMessage(e.target.value)} placeholder="Message your team..." aria-label="Chat message" />
+              <small>Enter to send · Esc to close</small>
+            </form>}
+          </section>
+        )}
+      </main>
 
-        <button
-          disabled={!role}
-          onClick={() => setReady(old => !old)}
-        >
-          {ready ? 'Cancel Ready (R)' : 'Ready (R)'}
-        </button>
-
-        <button disabled>
-          Start Game (waiting for 3 real players)
-        </button>
-      </div>
+      {stage === 'lobby' && (
+        <footer className="lobby-footer">
+          <span>Role: <strong>{role || 'None'}</strong></span>
+          <button type="button" disabled={!role} onClick={() => setReady(!ready)}>
+            {ready ? 'Ready ✓ (R)' : 'Ready (R)'}
+          </button>
+          <button type="button" className="start-button" disabled={!role || !ready} onClick={startDemo}>
+            ▶ Start Mission (Local Demo)
+          </button>
+          <span className="demo-note">Multiplayer will connect to the backend later</span>
+        </footer>
+      )}
     </div>
   );
 }
