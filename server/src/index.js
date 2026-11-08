@@ -2,6 +2,7 @@
 import { createServer } from 'node:http';
 import express from 'express';
 import { Server } from 'socket.io';
+import { registerSocketHandlers } from './socketHandlers.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
@@ -20,6 +21,8 @@ const io = new Server(httpServer, {
 
 io.on('connection', (socket) => {
   console.log(`Socket connected: ${socket.id}`);
+  
+  registerSocketHandlers(io, socket);
 
   socket.on('disconnect', (reason) => {
     console.log(`Socket disconnected: ${socket.id} (${reason})`);
