@@ -90,3 +90,30 @@ export function setReady(room, playerId, ready) {
   player.ready = wantsReady;
   return { room };
 }
+
+// ---------- team chat ----------
+
+const MAX_CHAT_LENGTH = 200;
+
+// chat:send — pressing T, typing, and pressing Enter.
+// Returns the finished message to send to everyone, or null if it should be ignored.
+export function createChatMessage(room, playerId, text) {
+  // Chat works in the lobby and during the mission (not on the results screen).
+  if (room.stage !== 'lobby' && room.stage !== 'mission') return null;
+
+  const player = room.players.find(p => p.id === playerId);
+  if (!player) return null;
+
+  if (typeof text !== 'string') return null;
+  const trimmed = text.trim(); // "  hi  " becomes "hi"
+  if (trimmed.length < 1 || trimmed.length > MAX_CHAT_LENGTH) return null;
+
+  // The server fills in WHO sent it and WHEN. The browser only sends the text,
+  // so nobody can pretend to be someone else or fake the time.
+  return {
+    playerId,
+    user: player.name,
+    text: trimmed,
+    time: Date.now(),
+  };
+}

@@ -5,7 +5,9 @@
 // Event names and data shapes come from shared/socket-contract.md.
 
 import { createRoom, joinRoom, leaveRoom, getRoom } from './rooms.js';
-import { movePlayer, selectRole, cancelRole, setReady } from './gameState.js';
+import {
+  movePlayer, selectRole, cancelRole, setReady, createChatMessage,
+} from './gameState.js';
 
 // Called once for every player who connects.
 // `io` = the whole server (can talk to everyone). `socket` = this one player's connection.
@@ -111,6 +113,19 @@ export function registerSocketHandlers(io, socket) {
   // data = { ready: true | false }. Pressing R.
   socket.on('player:ready', (data, reply) => {
     handleLobbyRequest(reply, (room) => setReady(room, socket.id, data?.ready));
+  });
+
+  // ---------- chat:send ----------
+  // data = { text }. No reply: the sender knows it worked when their own message comes back.
+  socket.on('chat:send', (data) => {
+    const room = getRoom(socket.data.roomCode);
+    if (!room) return; // not in a room
+
+    const message = createChatMessage(room, socket.id, data?.text);
+    if (!message) return; // empty, too long, or wrong stage: ignore it
+
+    // io.to(...) = everyone in the room INCLUDING the sender, so all 3 chats match exactly.
+    io.to(room.code).emit('chat:message', message);
   });
 
   // ---------- room:leave ----------
