@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import GameCanvas from './components/GameCanvas';
+import RoomEntry from './components/RoomEntry';
+import { socket, type Room } from './network/socket';
 import CodeWorkspace from './components/CodeWorkspace';
 import { EventBus } from './game/EventBus';
 import { challenges, type Role } from './game/data/challenges';
@@ -13,6 +15,9 @@ const demoPlayers = [
 ];
 
 export default function App() {
+  // Room Entry: save the server-approved room and our player ID.
+  const [joinedRoom, setJoinedRoom] = useState<Room | null>(null);
+  const [myPlayerId, setMyPlayerId] = useState('');
   const [role, setRole] = useState<Role | null>(null);
   const [ready, setReady] = useState(false);
   const [stage, setStage] = useState<'lobby' | 'mission'>('lobby');
@@ -23,6 +28,15 @@ export default function App() {
   const [now, setNow] = useState(Date.now());
   const chatInput = useRef<HTMLInputElement>(null);
   const chatHistory = useRef<HTMLDivElement>(null);
+
+  // Keep the room count and host updated when teammates join or leave.
+  useEffect(() => {
+    function updateRoom(room: Room) {
+      setJoinedRoom(current => current?.code === room.code ? room : current);
+    }
+    socket.on('room:update', updateRoom);
+    return () => { socket.off('room:update', updateRoom); };
+  }, []);
 
   // Existing LobbyScene emits this event when E selects/cancels a role.
   useEffect(() => {
@@ -89,11 +103,24 @@ export default function App() {
   const avatar = (name: string) => import.meta.env.BASE_URL + 'assets/characters/player_' + name + '.png';
   const title = role ? challenges[role].title : 'Launch Day';
 
+  // The Lobby and Phaser canvas only mount after the server accepts join.
+  if (!joinedRoom) {
+    return <RoomEntry onJoined={(room, playerId) => {
+      setJoinedRoom(room);
+      setMyPlayerId(playerId);
+    }} />;
+  }
+
   return (
     <div className={'app ' + (stage === 'mission' ? 'app-mission' : 'app-lobby')}>
       <header className="top-bar">
         <div className="brand">▣ <strong>CODE <em>RED!</em></strong></div>
-        <div className="stage-heading">{stage === 'lobby' ? 'Team Lobby' : 'Mission 01: ' + title}</div>
+        <div className="stage-heading">
+          {stage === 'lobby' ? 'Team Lobby' : 'Mission 01: ' + title}
+          <span className="room-session-tag">
+            {joinedRoom.code} · {joinedRoom.players.length}/3 · {joinedRoom.hostId === myPlayerId ? 'HOST' : 'PLAYER'}
+          </span>
+        </div>
         {stage === 'mission' && <div className="progress-badge">Team Progress <b>{complete ? '1 / 3' : '0 / 3'}</b></div>}
         <div className="players">
           {demoPlayers.map((player, i) => (
