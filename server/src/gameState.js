@@ -4,6 +4,8 @@
 // to do once they're inside: move, pick roles, get ready, start, and finish the mission.
 // Like rooms.js, it never talks to Socket.IO directly.
 
+import { MAX_CODE_LENGTH } from './challenges.js';
+
 // ---------- lobby movement ----------
 
 // The lobby world size agreed with the frontend (see shared/socket-contract.md, 3.2).
@@ -128,6 +130,40 @@ export function startMission(room, playerId) {
 export function getMissionDuration(room) {
   const startedAt = missionStartTimes.get(room);
   return startedAt ? Date.now() - startedAt : 0;
+}
+
+// When this room's current mission started. Also works as a "mission ID": if the
+// mission is reset and started again, this number changes.
+export function getMissionStartTime(room) {
+  return missionStartTimes.get(room) ?? null;
+}
+
+// ---------- code challenges ----------
+
+// challenge:submit — checks the request BEFORE we spend time asking Gemini.
+// Returns { player } if the code can be reviewed, or { error } if not.
+export function checkCanSubmit(room, playerId, code) {
+  if (room.stage !== 'mission') return { error: 'NOT_IN_MISSION' };
+
+  const player = room.players.find(p => p.id === playerId);
+  if (!player) return { error: 'NOT_IN_ROOM' };
+  if (!player.role) return { error: 'NO_ROLE' };
+
+  if (typeof code !== 'string') return { error: 'INVALID_CODE' };
+  if (code.length > MAX_CODE_LENGTH) return { error: 'CODE_TOO_LONG' };
+
+  return { player };
+}
+
+// Marks a role as passed on the team scoreboard.
+// Returns what to send in mission:progress, or null if this role had ALREADY passed
+// (so passing twice doesn't count twice, and nobody is told twice).
+export function recordPass(room, role) {
+  if (room.progress[role]) return null;
+
+  room.progress[role] = true;
+  const completed = Object.values(room.progress).filter(done => done).length;
+  return { progress: room.progress, completed };
 }
 
 // ---------- team chat ----------
