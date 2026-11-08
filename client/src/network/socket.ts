@@ -56,6 +56,8 @@ export type ErrorCode =
   | 'NOT_ALL_READY'
   | 'INVALID_CODE'
   | 'CODE_TOO_LONG'
+  | 'REVIEW_IN_PROGRESS'
+  | 'REVIEW_UNAVAILABLE'
   | 'NOT_ALL_COMPLETE'
   | 'ALREADY_COMPLETE';
 

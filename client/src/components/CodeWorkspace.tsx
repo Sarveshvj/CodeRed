@@ -1,17 +1,17 @@
 import { useEffect, useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { challenges, checkDemoCode, type Role } from '../game/data/challenges';
+import { challenges, type Role } from '../game/data/challenges';
+import { socket } from '../network/socket';
 
 type Props = {
   role: Role;
-  onComplete: () => void;
 };
 
 type FileName = 'code' | 'test' | 'readme';
 type TabName = 'terminal' | 'problems' | 'output';
 
 // VS Code-style mission editor. All UI is HTML/CSS, not an image.
-export default function CodeWorkspace({ role, onComplete }: Props) {
+export default function CodeWorkspace({ role }: Props) {
   const task = challenges[role];
   const [code, setCode] = useState(task.initialCode);
   const [terminal, setTerminal] = useState(task.initialTerminal);
@@ -19,6 +19,8 @@ export default function CodeWorkspace({ role, onComplete }: Props) {
   const [tab, setTab] = useState<TabName>('terminal');
   const [fullscreen, setFullscreen] = useState(false);
   const [passed, setPassed] = useState(false);
+
+  const [reviewing, setReviewing] = useState(false);
 
   // Start a new task when the player has a different role.
   useEffect(() => {
@@ -28,7 +30,20 @@ export default function CodeWorkspace({ role, onComplete }: Props) {
     setTab('terminal');
     setFullscreen(false);
     setPassed(false);
+    setReviewing(false);
   }, [role]);
+
+  // Stop showing Reviewing when the connection is lost.
+  useEffect(() => {
+    function disconnect() {
+      setReviewing(false);
+      setPassed(false);
+      setTab('terminal');
+      setTerminal('Server disconnected. Rejoin the room before submitting again.');
+    }
+    socket.on('disconnect', disconnect);
+    return () => { socket.off('disconnect', disconnect); };
+  }, []);
 
   const testName = role === 'frontend'
     ? 'Counter.test.tsx'
@@ -58,27 +73,42 @@ export default function CodeWorkspace({ role, onComplete }: Props) {
   }
 
   function runTests() {
-    // This is a local simulation. It does not execute player code.
-    const success = checkDemoCode(role, code);
+    if (reviewing) return;
     setTab('terminal');
-    setPassed(success);
-
-    if (success) {
-      setTerminal(
-        '$ npm test\nPASS ' + testName +
-        '\n  Test passed!\n\nTests: 1 passed, 0 failed' +
-        '\n[Local simulation - no real compiler]'
-      );
-      if (!passed) onComplete();
-    } else {
-      setTerminal(
-        '$ npm test\nFAIL ' + testName +
-        '\n  ' + task.description +
-        '\n\nHint: ' + task.hint +
-        '\n\nTests: 1 failed, 0 passed' +
-        '\n[Local simulation - no real compiler]'
-      );
+    setPassed(false);
+    if (!socket.connected) {
+      setTerminal('Server disconnected. Rejoin the room before submitting again.');
+      return;
     }
+    if (code.length > 10000) {
+      setTerminal('Code is too long. Maximum: 10,000 characters.');
+      return;
+    }
+
+    setReviewing(true);
+    setTerminal('$ submit code\nReviewing… Waiting for the backend.');
+    // Remember who submitted, in case the connection changes while waiting.
+    const playerId = socket.id;
+    // Allow the existing 15-second backend review to finish, plus transport time.
+    socket.timeout(20000).emit('challenge:submit', { code }, (err, reply) => {
+      if (!socket.connected || socket.id !== playerId) return;
+      setReviewing(false);
+      if (err) {
+        setTerminal('Server did not respond in time. Please try again.');
+      } else if (!reply || !reply.ok) {
+        const error = reply?.error;
+        if (error === 'REVIEW_UNAVAILABLE') {
+          setTerminal('Review unavailable. Please try again.');
+        } else if (error === 'REVIEW_IN_PROGRESS') {
+          setTerminal('A review is still running. Please wait before retrying.');
+        } else {
+          setTerminal('Submission failed: ' + (error || 'Unknown server response'));
+        }
+      } else {
+        setPassed(reply.passed);
+        setTerminal(reply.terminal);
+      }
+    });
   }
 
   return (
@@ -141,7 +171,7 @@ export default function CodeWorkspace({ role, onComplete }: Props) {
                 }
               }}
               options={{
-                readOnly: file !== 'code',
+                readOnly: file !== 'code' || reviewing,
                 fontSize: 16,
                 lineHeight: 23,
                 minimap: { enabled: false },
@@ -157,7 +187,7 @@ export default function CodeWorkspace({ role, onComplete }: Props) {
             <button type="button" className={tab === 'terminal' ? 'cr-active' : ''} onClick={() => setTab('terminal')}>TERMINAL</button>
             <button type="button" className={tab === 'problems' ? 'cr-active' : ''} onClick={() => setTab('problems')}>PROBLEMS</button>
             <button type="button" className={tab === 'output' ? 'cr-active' : ''} onClick={() => setTab('output')}>OUTPUT</button>
-            <button type="button" className="cr-run-btn" onClick={runTests}>▶ Run Tests</button>
+            <button type="button" className="cr-run-btn" onClick={runTests} disabled={reviewing}>{reviewing ? 'Reviewing…' : '▶ Run Tests'}</button>
           </div>
 
           <div className="cr-terminal-output">
@@ -169,13 +199,13 @@ export default function CodeWorkspace({ role, onComplete }: Props) {
               if (line.startsWith('$')) color = 'cr-command';
               return <div key={i} className={color}>{line || '\u00a0'}</div>;
             })}
-            {tab === 'problems' && (passed ? 'No simulated problems.' : 'Run Tests to see the current problem.')}
-            {tab === 'output' && 'Local demo only. Gemini API is not connected yet.'}
+            {tab === 'problems' && (passed ? 'Latest submission passed backend review.' : 'Run Tests to see the current problem.')}
+            {tab === 'output' && 'Code is submitted to the backend for review. Review results appear in Terminal; code is not executed.'}
           </div>
 
           <div className="cr-status-bar">
             <span>CODE RED!</span>
-            <span>{filename} · Local simulation</span>
+            <span>{filename} · Backend review</span>
           </div>
         </div>
       </div>

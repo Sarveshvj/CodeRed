@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import GameCanvas from './components/GameCanvas';
 import RoomEntry from './components/RoomEntry';
-import { socket, type ChatMessage, type Facing, type Room } from './network/socket';
+import { socket, type ChatMessage, type Facing, type Progress, type Room } from './network/socket';
 import CodeWorkspace from './components/CodeWorkspace';
 import { EventBus } from './game/EventBus';
 import { challenges, type Role } from './game/data/challenges';
@@ -12,7 +12,6 @@ export default function App() {
   const [myPlayerId, setMyPlayerId] = useState('');
   const [lobbyError, setLobbyError] = useState('');
   const [stage, setStage] = useState<'lobby' | 'mission'>('lobby');
-  const [complete, setComplete] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -26,6 +25,14 @@ export default function App() {
   const me = joinedRoom?.players.find(player => player.id === myPlayerId);
   const role: Role | null = me?.role ?? null;
   const ready = me?.ready ?? false;
+  const complete = role ? joinedRoom?.progress[role] === true : false;
+  // Count the roles that the backend has marked as passed.
+  let completed = 0;
+  if (joinedRoom) {
+    if (joinedRoom.progress.frontend) completed += 1;
+    if (joinedRoom.progress.backend) completed += 1;
+    if (joinedRoom.progress.devops) completed += 1;
+  }
 
   // The server decides when the mission starts for ALL three players.
   // Listening to room:update also handles a teammate leaving mid-mission.
@@ -38,7 +45,6 @@ export default function App() {
 
       stageRef.current = 'mission';
       setStage('mission');
-      setComplete(false);
       setStarting(false);
       EventBus.dispatchEvent(new CustomEvent('mission:start', { detail: myRole }));
     }
@@ -53,7 +59,6 @@ export default function App() {
         // A teammate disconnected: backend returned the room to Lobby.
         stageRef.current = 'lobby';
         setStage('lobby');
-        setComplete(false);
         setStarting(false);
         EventBus.dispatchEvent(new Event('lobby:return'));
       }
@@ -69,10 +74,20 @@ export default function App() {
       EventBus.dispatchEvent(new CustomEvent('lobby:player-moved', { detail: data }));
     }
 
+    // All three players receive the same progress from the backend.
+    function updateProgress(data: { progress: Progress; completed: number }) {
+      setJoinedRoom(current => {
+        if (!current || current.code !== roomCode || current.stage !== 'mission') return current;
+        return { ...current, progress: data.progress };
+      });
+    }
+
+    socket.on('mission:progress', updateProgress);
     socket.on('room:update', updateRoom);
     socket.on('game:started', gameStarted);
     socket.on('player:moved', updateMovement);
     return () => {
+      socket.off('mission:progress', updateProgress);
       socket.off('room:update', updateRoom);
       socket.off('game:started', gameStarted);
       socket.off('player:moved', updateMovement);
@@ -243,13 +258,13 @@ export default function App() {
             {joinedRoom.code} · {joinedRoom.players.length}/3 · {joinedRoom.hostId === myPlayerId ? 'HOST' : 'PLAYER'}
           </span>
         </div>
-        {stage === 'mission' && <div className="progress-badge">Team Progress <b>{complete ? '1 / 3' : '0 / 3'}</b></div>}
+        {stage === 'mission' && <div className="progress-badge">Team Progress <b>{completed} / 3</b></div>}
         <div className="players">
           {joinedRoom.players.map(player => (
             <div className="player-badge" key={player.id}>
               <img src={avatar(player.avatar)} alt="" />
               <div><b>{player.name}{player.id === myPlayerId ? ' (You)' : ''}</b>
-              <small>{player.role || 'No role'}{player.ready ? ' · Ready' : ''}</small></div>
+              <small>{player.role || 'No role'}{stage === 'mission' ? (player.role && joinedRoom.progress[player.role] ? ' · Passed' : ' · Pending') : player.ready ? ' · Ready' : ''}</small></div>
             </div>
           ))}
         </div>
@@ -280,11 +295,11 @@ export default function App() {
                 <h2>{title}</h2>
                 <p><span className={complete ? 'checked' : ''}>{complete ? '☑' : '☐'}</span> Fix the bug</p>
                 <p><span className={complete ? 'checked' : ''}>{complete ? '☑' : '☐'}</span> Pass all tests</p>
-                <p><span>☐</span> Sync with your team</p>
+                <p><span className={completed === 3 ? 'checked' : ''}>{completed === 3 ? '☑' : '☐'}</span> Sync with your team</p>
               </div>
             </section>
             <div className="station-sign">✦ {role?.toUpperCase()} WORKSTATION ✦</div>
-            <CodeWorkspace role={role || 'frontend'} onComplete={() => setComplete(true)} />
+            <CodeWorkspace key={role} role={role || 'frontend'} />
           </>
         )}
 
