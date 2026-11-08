@@ -6,7 +6,7 @@
 
 import { createRoom, joinRoom, leaveRoom, getRoom } from './rooms.js';
 import {
-  movePlayer, selectRole, cancelRole, setReady, createChatMessage,
+  movePlayer, selectRole, cancelRole, setReady, startMission, createChatMessage,
 } from './gameState.js';
 
 // Called once for every player who connects.
@@ -29,11 +29,13 @@ export function registerSocketHandlers(io, socket) {
     if (room) sendRoomUpdate(room); // tell the players still inside
   }
 
-  // Shared by role:select, role:cancel and player:ready, which all work the same way:
+  // Shared by every request that gets a reply (role:select, role:cancel, player:ready, game:start).
+  // They all work the same way:
   //   1. find this player's room   2. apply a rule from gameState.js
-  //   3. reply to this player      4. if it worked, show everyone the new room
+  //   3. reply to this player      4. if it worked, tell everyone in the room
   // `applyRule` is the rule to run. Each listener below passes in a different one.
-  function handleLobbyRequest(reply, applyRule) {
+  // `announce` is how to tell everyone. Most send room:update; game:start sends game:started.
+  function handleRequest(reply, applyRule, announce = sendRoomUpdate) {
     if (typeof reply !== 'function') reply = () => {};
 
     const room = getRoom(socket.data.roomCode);
@@ -49,7 +51,7 @@ export function registerSocketHandlers(io, socket) {
     }
 
     reply({ ok: true });
-    sendRoomUpdate(room);
+    announce(room);
   }
 
   // ---------- room:join ----------
@@ -100,19 +102,33 @@ export function registerSocketHandlers(io, socket) {
   // ---------- role:select ----------
   // data = { role }. Pressing E at a desk.
   socket.on('role:select', (data, reply) => {
-    handleLobbyRequest(reply, (room) => selectRole(room, socket.id, data?.role));
+    handleRequest(reply, (room) => selectRole(room, socket.id, data?.role));
   });
 
   // ---------- role:cancel ----------
   // data = {}. Pressing E again to leave the desk.
   socket.on('role:cancel', (data, reply) => {
-    handleLobbyRequest(reply, (room) => cancelRole(room, socket.id));
+    handleRequest(reply, (room) => cancelRole(room, socket.id));
   });
 
   // ---------- player:ready ----------
   // data = { ready: true | false }. Pressing R.
   socket.on('player:ready', (data, reply) => {
-    handleLobbyRequest(reply, (room) => setReady(room, socket.id, data?.ready));
+    handleRequest(reply, (room) => setReady(room, socket.id, data?.ready));
+  });
+
+  // ---------- game:start ----------
+  // data = {}. The host presses Start Mission.
+  // On success, everyone gets game:started (not room:update) and switches to the mission screen.
+  socket.on('game:start', (data, reply) => {
+    handleRequest(
+      reply,
+      (room) => startMission(room, socket.id),
+      (room) => {
+        io.to(room.code).emit('game:started', { room });
+        console.log(`Room ${room.code} started the mission`);
+      },
+    );
   });
 
   // ---------- chat:send ----------
