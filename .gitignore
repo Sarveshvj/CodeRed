@@ -42,3 +42,25 @@ Desktop.ini
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Downloaded libraries
+node_modules/
+**/node_modules/
+
+# Local database files
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm
+*.sqlite-wal
+*.sqlite-shm
+
+# Local database storage
+server/data/
+
+# Environment variables
+.env
+.env.*
+!.env.example
