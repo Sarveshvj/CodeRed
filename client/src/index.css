@@ -428,3 +428,28 @@ html, body, #root { min-height: 100%; }
   right: 24px;
   bottom: 36px;
 }
+
+/* Run Tests while Gemini is reviewing */
+.cr-run-btn:disabled { opacity: .6; cursor: wait; }
+
+/* Deploy to Production (inside the mission card, unlocks at 3/3) */
+.deploy-panel { margin-top: 14px; padding-top: 12px; border-top: 1px solid #ff315955; display: flex; flex-direction: column; gap: 7px; }
+.deploy-button { padding: 11px 16px; border: 0; border-radius: 7px; background: #6bdf9b; color: #05170d; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 0 16px #6bdf9b66; }
+.deploy-button:disabled { opacity: .6; cursor: wait; }
+.deploy-waiting { font-size: 13px; color: #ffdba0; }
+.deploy-error { font-size: 12px; color: #ff8da1; }
+
+/* Results screen after a successful deploy */
+.results-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 12; width: min(640px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow: auto; padding: 24px 28px; background: rgba(9, 22, 38, .95); border: 2px solid #6bdf9b; border-radius: 12px; box-shadow: 0 0 28px #6bdf9b44; color: white; text-align: center; }
+.results-screen .eyebrow { color: #6bdf9b; }
+.results-screen h2 { font-size: 26px; margin: 8px 0 6px; }
+.results-time { font-size: 15px; color: #c9d4e6; margin: 0 0 18px; }
+.results-time b { color: #ffc236; font-size: 18px; }
+.results-team { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 18px; text-align: left; }
+.results-player { display: flex; gap: 10px; padding: 12px; background: #0e1829; border: 1px solid #253044; border-radius: 9px; }
+.results-player img { width: 40px; height: 52px; object-fit: contain; image-rendering: pixelated; flex-shrink: 0; }
+.results-player b { display: block; font-size: 14px; }
+.results-player small { display: block; color: #9faec8; font-size: 11px; margin-top: 2px; letter-spacing: 1px; }
+.results-player p { margin: 7px 0 0; font-size: 12px; line-height: 1.4; }
+.results-player .results-skill { color: #7bcefa; }
+.results-leave { padding: 11px 20px; border: 0; border-radius: 7px; background: #36b6f0; color: #03101e; font-weight: bold; cursor: pointer; display: block; margin: 0 auto 8px; }

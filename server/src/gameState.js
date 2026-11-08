@@ -166,6 +166,27 @@ export function recordPass(room, role) {
   return { progress: room.progress, completed };
 }
 
+// ---------- deploy to production ----------
+
+// deployment:request — the host clicks Deploy to Production after Team Progress 3/3.
+// Returns { room, durationMs } if the deploy works, or { error } if not.
+export function deployMission(room, playerId) {
+  // Checked first: once deployed, every later click gets ALREADY_COMPLETE,
+  // so mission:complete can only ever be sent once.
+  if (room.stage === 'complete') return { error: 'ALREADY_COMPLETE' };
+  if (room.stage !== 'mission') return { error: 'NOT_IN_MISSION' };
+
+  if (room.hostId !== playerId) return { error: 'NOT_HOST' };
+
+  // All 3 roles must have passed their challenge.
+  const allPassed = ROLES.every(role => room.progress[role]);
+  if (!allPassed) return { error: 'NOT_ALL_COMPLETE' };
+
+  const durationMs = getMissionDuration(room); // how long the team took
+  room.stage = 'complete';
+  return { room, durationMs };
+}
+
 // ---------- team chat ----------
 
 const MAX_CHAT_LENGTH = 200;

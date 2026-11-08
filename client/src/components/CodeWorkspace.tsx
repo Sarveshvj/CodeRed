@@ -1,17 +1,31 @@
 import { useEffect, useState } from 'react';
 import Editor from '@monaco-editor/react';
-import { challenges, checkDemoCode, type Role } from '../game/data/challenges';
+import { challenges, type Role } from '../game/data/challenges';
+import { socket, type ErrorCode } from '../network/socket';
 
 type Props = {
   role: Role;
-  onComplete: () => void;
 };
+
+// Gemini can take several seconds; the contract asks for at least 20 s.
+const REVIEW_TIMEOUT_MS = 20000;
+
+// Friendly terminal text for each error the server can send back.
+function reviewErrorText(error: ErrorCode): string {
+  switch (error) {
+    case 'REVIEW_UNAVAILABLE': return 'The AI reviewer is busy right now. Wait a few seconds and press Run Tests again.';
+    case 'REVIEW_IN_PROGRESS': return 'Your previous code is still being reviewed. Please wait.';
+    case 'CODE_TOO_LONG': return 'Your code is too long (max 10,000 characters).';
+    case 'NOT_IN_MISSION': return 'The mission is no longer running, so this result was not counted.';
+    default: return 'Could not review your code: ' + error;
+  }
+}
 
 type FileName = 'code' | 'test' | 'readme';
 type TabName = 'terminal' | 'problems' | 'output';
 
 // VS Code-style mission editor. All UI is HTML/CSS, not an image.
-export default function CodeWorkspace({ role, onComplete }: Props) {
+export default function CodeWorkspace({ role }: Props) {
   const task = challenges[role];
   const [code, setCode] = useState(task.initialCode);
   const [terminal, setTerminal] = useState(task.initialTerminal);
@@ -19,6 +33,7 @@ export default function CodeWorkspace({ role, onComplete }: Props) {
   const [tab, setTab] = useState<TabName>('terminal');
   const [fullscreen, setFullscreen] = useState(false);
   const [passed, setPassed] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
 
   // Start a new task when the player has a different role.
   useEffect(() => {
@@ -57,28 +72,27 @@ export default function CodeWorkspace({ role, onComplete }: Props) {
     language = 'markdown';
   }
 
+  // Run Tests sends the code to the server, where Gemini decides PASS or FAIL.
+  // The server then tells ALL players (mission:progress), so Team Progress stays in sync.
   function runTests() {
-    // This is a local simulation. It does not execute player code.
-    const success = checkDemoCode(role, code);
+    if (reviewing) return;
     setTab('terminal');
-    setPassed(success);
+    setReviewing(true);
+    setTerminal('$ ai-review ' + task.filename + '\nReviewing your code with Gemini...');
 
-    if (success) {
-      setTerminal(
-        '$ npm test\nPASS ' + testName +
-        '\n  Test passed!\n\nTests: 1 passed, 0 failed' +
-        '\n[Local simulation - no real compiler]'
-      );
-      if (!passed) onComplete();
-    } else {
-      setTerminal(
-        '$ npm test\nFAIL ' + testName +
-        '\n  ' + task.description +
-        '\n\nHint: ' + task.hint +
-        '\n\nTests: 1 failed, 0 passed' +
-        '\n[Local simulation - no real compiler]'
-      );
-    }
+    socket.timeout(REVIEW_TIMEOUT_MS).emit('challenge:submit', { code }, (err, res) => {
+      setReviewing(false);
+      if (err) {
+        setTerminal('$ ai-review ' + task.filename + '\nServer did not respond. Press Run Tests to try again.');
+        return;
+      }
+      if (!res.ok) {
+        setTerminal('$ ai-review ' + task.filename + '\n' + reviewErrorText(res.error));
+        return;
+      }
+      setTerminal(res.terminal); // PASS/FAIL + Gemini's explanation and hint
+      setPassed(res.passed);
+    });
   }
 
   return (
@@ -157,7 +171,9 @@ export default function CodeWorkspace({ role, onComplete }: Props) {
             <button type="button" className={tab === 'terminal' ? 'cr-active' : ''} onClick={() => setTab('terminal')}>TERMINAL</button>
             <button type="button" className={tab === 'problems' ? 'cr-active' : ''} onClick={() => setTab('problems')}>PROBLEMS</button>
             <button type="button" className={tab === 'output' ? 'cr-active' : ''} onClick={() => setTab('output')}>OUTPUT</button>
-            <button type="button" className="cr-run-btn" onClick={runTests}>▶ Run Tests</button>
+            <button type="button" className="cr-run-btn" onClick={runTests} disabled={reviewing}>
+              {reviewing ? 'Reviewing…' : '▶ Run Tests'}
+            </button>
           </div>
 
           <div className="cr-terminal-output">
@@ -169,13 +185,13 @@ export default function CodeWorkspace({ role, onComplete }: Props) {
               if (line.startsWith('$')) color = 'cr-command';
               return <div key={i} className={color}>{line || '\u00a0'}</div>;
             })}
-            {tab === 'problems' && (passed ? 'No simulated problems.' : 'Run Tests to see the current problem.')}
-            {tab === 'output' && 'Local demo only. Gemini API is not connected yet.'}
+            {tab === 'problems' && (passed ? 'No problems found by the AI review.' : 'Run Tests to see the current problem.')}
+            {tab === 'output' && 'Run Tests sends your code to the server, where Gemini AI reviews it. Your code is never run.'}
           </div>
 
           <div className="cr-status-bar">
             <span>CODE RED!</span>
-            <span>{filename} · Local simulation</span>
+            <span>{filename} · Gemini AI review</span>
           </div>
         </div>
       </div>
