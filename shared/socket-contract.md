@@ -259,14 +259,18 @@ Errors: `NOT_IN_ROOM`, `NOT_IN_LOBBY`, `NOT_HOST`, `NOT_ENOUGH_PLAYERS`, `NOT_AL
 
 - Every player submits **only their Monaco editor code**. The server gets their role from the player's server-side room state. **Do not send a role or client-calculated `passed`.**
 - Maximum code length: 10,000 characters. Code must be a string.
-- The backend checks code using role-specific, **deterministic** rules in `server/src/challenges.js` and returns PASS/FAIL plus terminal output.
+- **Gemini AI decides PASS/FAIL** (team decision, replaces the earlier deterministic-rules plan). The server sends the task, acceptance criteria (`shared/mission01.md`), starter code and the player's code to Gemini (`server/src/aiReview.js`), and returns PASS/FAIL plus Gemini's explanation and hint as `terminal` text. The API key stays on the server only.
+- **A review takes 1–15 seconds.** The server gives up after 15 s. The client must use a `challenge:submit` timeout of **at least 20 seconds** (not the 5 s from the example in section 1) and show a "Reviewing…" state meanwhile.
+- One review at a time per player. A second `challenge:submit` while one is still running gets `REVIEW_IN_PROGRESS`.
+- If Gemini is unreachable, times out, or no API key is configured, the ack is `REVIEW_UNAVAILABLE`. The player can simply try again.
+- If the mission is reset while a review is running (a player left), the result is discarded and the ack is `NOT_IN_MISSION`.
 - Challenge descriptions, starter code, and hints may remain in `client/src/game/data/challenges.ts`. Its local `checkDemoCode()` is only for offline UI testing; it is **not** authoritative in multiplayer.
-- Never execute arbitrary submitted code directly with `eval`, `Function`, or unrestricted OS processes. Pattern/structural checks are acceptable for the hackathon MVP; do not describe them as real compilation or complete test execution.
+- Never execute arbitrary submitted code directly with `eval`, `Function`, or unrestricted OS processes. The AI only reads the code; do not describe the review as real compilation or test execution.
 - On a first PASS, set `room.progress[player.role] = true`, then broadcast `mission:progress` to all players. Subsequent PASS submissions for that role must **not** increment progress again.
 - `completed` is the number of roles with `true` progress, from 0 through 3.
 - **Important:** At `completed === 3`, the mission does **not** finish automatically. All clients unlock the Deploy phase; see the next section.
 
-Errors: `NOT_IN_ROOM`, `NOT_IN_MISSION`, `NO_ROLE`, `INVALID_CODE`, `CODE_TOO_LONG`.
+Errors: `NOT_IN_ROOM`, `NOT_IN_MISSION`, `NO_ROLE`, `INVALID_CODE`, `CODE_TOO_LONG`, `REVIEW_IN_PROGRESS`, `REVIEW_UNAVAILABLE`.
 
 ### 3.8 Deploy to Production (after Team Progress 3/3)
 
@@ -334,6 +338,8 @@ All ack errors use `{ ok: false, error: ErrorCode }`.
 | `NOT_ALL_READY` | Some roles are missing or some players are not ready |
 | `INVALID_CODE` | Submitted code is not a string |
 | `CODE_TOO_LONG` | Code is longer than 10,000 characters |
+| `REVIEW_IN_PROGRESS` | This player's previous submission is still being reviewed |
+| `REVIEW_UNAVAILABLE` | Gemini could not review the code (no API key, timeout, or service error); try again |
 | `NOT_ALL_COMPLETE` | All three challenges have not passed yet |
 | `ALREADY_COMPLETE` | Deployment has already completed |
 
@@ -400,7 +406,8 @@ These paths describe **planned integration targets**. A file mentioned here does
 | `server/src/rooms.js` | In-memory room Map, room code creation, join/leave, avatar assignment, host reassignment |
 | `server/src/socketHandlers.js` | Register all socket event handlers, validate membership/stage, send acks and broadcasts |
 | `server/src/gameState.js` | Role/ready rules, stage transitions, progress, mission start time and completion |
-| `server/src/challenges.js` | Three deterministic challenge validators and terminal messages |
+| `server/src/challenges.js` | The three Mission 01 tasks and terminal messages |
+| `server/src/aiReview.js` | Sends a submission to Gemini and reads back PASS/FAIL, explanation and hint |
 
 ## 8. Recommended build and test order
 

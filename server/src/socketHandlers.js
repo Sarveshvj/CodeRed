@@ -7,7 +7,9 @@
 import { createRoom, joinRoom, leaveRoom, getRoom } from './rooms.js';
 import {
   movePlayer, selectRole, cancelRole, setReady, startMission, createChatMessage,
+  checkCanSubmit, getMissionStartTime, recordPass,
 } from './gameState.js';
+import { reviewSubmission } from './challenges.js';
 
 // Called once for every player who connects.
 // `io` = the whole server (can talk to everyone). `socket` = this one player's connection.
@@ -129,6 +131,71 @@ export function registerSocketHandlers(io, socket) {
         console.log(`Room ${room.code} started the mission`);
       },
     );
+  });
+
+  // ---------- challenge:submit ----------
+  // data = { code }. The player clicks Run Tests. Gemini decides PASS or FAIL.
+  // This one is `async` because we have to WAIT for Gemini's answer (1-15 seconds).
+  socket.on('challenge:submit', async (data, reply) => {
+    if (typeof reply !== 'function') reply = () => {};
+
+    const room = getRoom(socket.data.roomCode);
+    if (!room) {
+      reply({ ok: false, error: 'NOT_IN_ROOM' });
+      return;
+    }
+
+    // Cheap checks first (right stage, has a role, code not too long), so we never
+    // pay for a Gemini request that was going to be rejected anyway.
+    const check = checkCanSubmit(room, socket.id, data?.code);
+    if (check.error) {
+      reply({ ok: false, error: check.error });
+      return;
+    }
+
+    // One review at a time per player. Stops button-mashing from using up the Gemini quota.
+    if (socket.data.reviewing) {
+      reply({ ok: false, error: 'REVIEW_IN_PROGRESS' });
+      return;
+    }
+
+    const role = check.player.role;
+    const missionId = getMissionStartTime(room); // remember which mission this was for
+
+    let result;
+    socket.data.reviewing = true;
+    try {
+      result = await reviewSubmission(role, data.code); // ...wait for Gemini...
+    } catch (err) {
+      console.error(`Gemini review failed for room ${room.code}: ${err.message}`);
+      reply({ ok: false, error: 'REVIEW_UNAVAILABLE' });
+      return;
+    } finally {
+      socket.data.reviewing = false; // always runs, even after an error
+    }
+
+    // While we waited, things may have changed: someone left, so the mission was reset.
+    // Only count the result if it's still the same mission and this player still has this role.
+    const stillSameMission = room.stage === 'mission'
+      && getMissionStartTime(room) === missionId
+      && room.players.some(p => p.id === socket.id && p.role === role);
+    if (!stillSameMission) {
+      console.log(`Room ${room.code}: ${role} review discarded (mission changed while waiting)`);
+      reply({ ok: false, error: 'NOT_IN_MISSION' });
+      return;
+    }
+
+    console.log(`Room ${room.code}: ${role} review -> ${result.passed ? 'PASS' : 'FAIL'}`);
+    reply({ ok: true, passed: result.passed, terminal: result.terminal });
+
+    // First PASS for this role: update the team scoreboard for everyone.
+    if (result.passed) {
+      const update = recordPass(room, role);
+      if (update) {
+        io.to(room.code).emit('mission:progress', update);
+        console.log(`Room ${room.code}: ${role} passed (${update.completed}/3)`);
+      }
+    }
   });
 
   // ---------- chat:send ----------
