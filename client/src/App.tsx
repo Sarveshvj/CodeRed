@@ -25,6 +25,11 @@ export default function App() {
   const chatHistory = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Stage>('lobby');
   const [starting, setStarting] = useState(false);
+  // Reconnect: remember who we are so a dropped connection can rejoin the same room.
+  const [connected, setConnected] = useState(socket.connected);
+  const [entryNotice, setEntryNotice] = useState('');
+  const nameRef = useRef('');
+  const roomCodeRef = useRef('');
 
   const me = joinedRoom?.players.find(player => player.id === myPlayerId);
   const role: Role | null = me?.role ?? null;
@@ -107,6 +112,82 @@ export default function App() {
       socket.off('mission:complete', missionComplete);
     };
   }, [roomCode, myPlayerId]);
+
+  useEffect(() => {
+    roomCodeRef.current = joinedRoom?.code ?? '';
+  }, [joinedRoom?.code]);
+
+  // Our OWN connection dropped. The server removes us from the room straight away,
+  // and the new connection gets a new socket id. So reset to Lobby and, once we are
+  // connected again, join the same room again under the same name.
+  useEffect(() => {
+    let retryTimer = 0;
+    let attempts = 0;
+
+    function onDisconnect() {
+      setConnected(false);
+      window.clearTimeout(retryTimer);
+      // On the results screen there is nothing to rejoin; Leave still works locally.
+      if (!roomCodeRef.current || stageRef.current === 'complete') return;
+
+      if (stageRef.current === 'mission') EventBus.dispatchEvent(new Event('lobby:return'));
+      stageRef.current = 'lobby';
+      setStage('lobby');
+      setStarting(false);
+      setDeploying(false);
+      setDeployError('');
+      setLobbyError('Connection lost — reconnecting…');
+    }
+
+    function rejoin() {
+      const roomCode = roomCodeRef.current;
+      const name = nameRef.current;
+      if (!roomCode || !name || !socket.connected) return;
+      attempts += 1;
+
+      socket.timeout(7000).emit('room:join', { name, roomCode }, (err, res) => {
+        if (roomCodeRef.current !== roomCode) return; // the player left meanwhile
+
+        let error: string;
+        if (err) {
+          error = 'no response';
+        } else if (res.ok) {
+          attempts = 0;
+          setJoinedRoom(res.room);
+          setMyPlayerId(res.you); // new socket = new player id
+          setLobbyError('Reconnected — choose your role and press Ready again');
+          return;
+        } else {
+          error = res.error;
+        }
+
+        // The server may still be holding our old seat for a few seconds
+        // (it has not noticed the old connection is gone yet). Try again.
+        const retryable = err || error === 'ROOM_FULL' || error === 'GAME_ALREADY_STARTED';
+        if (retryable && attempts < 5) {
+          retryTimer = window.setTimeout(rejoin, 3000);
+          return;
+        }
+        clearRoom('Connection lost and room ' + roomCode + ' could not be rejoined ('
+          + error + '). Create or join a room again.');
+      });
+    }
+
+    function onConnect() {
+      setConnected(true);
+      if (stageRef.current === 'complete') return;
+      attempts = 0;
+      rejoin();
+    }
+
+    socket.on('disconnect', onDisconnect);
+    socket.on('connect', onConnect);
+    return () => {
+      window.clearTimeout(retryTimer);
+      socket.off('disconnect', onDisconnect);
+      socket.off('connect', onConnect);
+    };
+  }, []);
 
   // Receive chat messages from the server, including our own messages.
   // Use only chat:message to update the history, so nobody sees duplicates.
@@ -270,7 +351,13 @@ export default function App() {
 
   // Results screen -> back to Room Entry. To replay, the team creates a new room.
   function leaveRoom() {
-    socket.emit('room:leave', {});
+    if (socket.connected) socket.emit('room:leave', {});
+    clearRoom();
+  }
+
+  // Back to Room Entry. `notice` explains why, e.g. after a failed reconnect.
+  function clearRoom(notice = '') {
+    roomCodeRef.current = ''; // stops any pending rejoin attempt
     stageRef.current = 'lobby';
     setStage('lobby');
     setJoinedRoom(null);
@@ -278,6 +365,10 @@ export default function App() {
     setMessages([]);
     setLobbyError('');
     setDurationMs(0);
+    setStarting(false);
+    setDeploying(false);
+    setDeployError('');
+    setEntryNotice(notice);
   }
 
   const shown = chatOpen ? messages : messages.filter(m => now - m.time < 8000).slice(-4);
@@ -286,7 +377,9 @@ export default function App() {
 
   // The Lobby and Phaser canvas only mount after the server accepts join.
   if (!joinedRoom) {
-    return <RoomEntry onJoined={(room, playerId) => {
+    return <RoomEntry notice={entryNotice} onJoined={(room, playerId, name) => {
+      nameRef.current = name;
+      setEntryNotice('');
       setJoinedRoom(room);
       setMyPlayerId(playerId);
     }} />;
@@ -346,7 +439,7 @@ export default function App() {
                   <div className="deploy-panel">
                     {isHost ? (
                       <button type="button" className="deploy-button"
-                        disabled={deploying || !socket.connected} onClick={deploy}>
+                        disabled={deploying || !connected} onClick={deploy}>
                         {deploying ? 'Deploying…' : '🚀 Deploy to Production'}
                       </button>
                     ) : (
@@ -387,7 +480,7 @@ export default function App() {
             {ready ? 'Ready ✓ (R)' : 'Ready (R)'}
           </button>
           <button type="button" className="start-button"
-            disabled={!allReady || !isHost || starting || !socket.connected}
+            disabled={!allReady || !isHost || starting || !connected}
             onClick={startMission}>
             {starting ? 'Starting...' : '▶ Start Mission'}
           </button>

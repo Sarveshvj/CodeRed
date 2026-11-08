@@ -44,6 +44,19 @@ export default class LobbyScene extends Phaser.Scene {
 
   constructor() { super('LobbyScene'); }
 
+  // Phaser reuses this scene object when it restarts (back from a mission),
+  // so clear the per-run state. Clearing myId makes the next sync place the
+  // new sprite at the server's position.
+  init() {
+    this.myId = '';
+    this.selectedRole = null;
+    this.rolePending = false;
+    this.roleError = '';
+    this.lastMoveSent = 0;
+    this.facing = 'front';
+    this.flipX = false;
+  }
+
   preload() {
     const base = import.meta.env.BASE_URL + 'assets/';
     for (const color of ['purple', 'white', 'yellow']) {

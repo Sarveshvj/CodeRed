@@ -43,6 +43,7 @@ export default function CodeWorkspace({ role }: Props) {
     setTab('terminal');
     setFullscreen(false);
     setPassed(false);
+    setReviewing(false);
   }, [role]);
 
   const testName = role === 'frontend'
@@ -74,6 +75,7 @@ export default function CodeWorkspace({ role }: Props) {
 
   // Run Tests sends the code to the server, where Gemini decides PASS or FAIL.
   // The server then tells ALL players (mission:progress), so Team Progress stays in sync.
+  // The editor is read-only while reviewing, so the result always matches the code on screen.
   function runTests() {
     if (reviewing) return;
     setTab('terminal');
@@ -138,6 +140,7 @@ export default function CodeWorkspace({ role }: Props) {
           <div className="cr-editor-tab">
             <span>{filename}</span>
             {file !== 'code' && <small>READ ONLY</small>}
+            {file === 'code' && reviewing && <small>LOCKED · REVIEWING</small>}
           </div>
 
           <div className="cr-monaco-box">
@@ -149,13 +152,13 @@ export default function CodeWorkspace({ role }: Props) {
               language={language}
               value={content}
               onChange={(value) => {
-                if (file === 'code') {
+                if (file === 'code' && !reviewing) {
                   setCode(value || '');
                   setPassed(false);
                 }
               }}
               options={{
-                readOnly: file !== 'code',
+                readOnly: file !== 'code' || reviewing,
                 fontSize: 16,
                 lineHeight: 23,
                 minimap: { enabled: false },

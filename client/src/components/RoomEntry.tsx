@@ -9,7 +9,9 @@ import {
 import './RoomEntry.css';
 
 type Props = {
-  onJoined: (room: Room, playerId: string) => void;
+  onJoined: (room: Room, playerId: string, name: string) => void;
+  // Shown when we come back here after a failed reconnect.
+  notice?: string;
 };
 
 const ERROR_MESSAGES: Partial<Record<ErrorCode, string>> = {
@@ -54,12 +56,12 @@ function waitForConnection(): Promise<void> {
   });
 }
 
-export default function RoomEntry({ onJoined }: Props) {
+export default function RoomEntry({ onJoined, notice = '' }: Props) {
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [busy, setBusy] = useState<'create' | 'join' | null>(null);
   const [connected, setConnected] = useState(socket.connected);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(notice);
 
   useEffect(() => {
     const update = () => setConnected(socket.connected);
@@ -110,7 +112,7 @@ export default function RoomEntry({ onJoined }: Props) {
       }
 
       // The backend assigned our id and sent the real room state.
-      onJoined(reply.room, reply.you);
+      onJoined(reply.room, reply.you, cleanName);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to connect.');
     } finally {
