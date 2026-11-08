@@ -1,20 +1,23 @@
 /* CODE RED! Lobby + Mission UI. Student-friendly CSS. */
 * { box-sizing: border-box; }
 html, body, #root { margin: 0; height: 100%; min-width: 850px; }
-body { background: #080f1c; color: #e8edf7; font-family: Arial, Helvetica, sans-serif; }
+/* Site-wide font. Change this one line to try a different font. */
+:root { --app-font: "Squada One", sans-serif; }
+body { background: #080f1c; color: #e8edf7; font-family: var(--app-font); }
 button { font-family: inherit; cursor: pointer; }
+input { font-family: inherit; }
 button:disabled { opacity: .5; cursor: not-allowed; }
 .app { min-height: 100vh; display: flex; flex-direction: column; background: #0a1223; }
 .top-bar { display: flex; align-items: center; gap: 22px; flex-wrap: nowrap; height: 79px; flex-shrink: 0; padding: 9px 24px; background: #080e19; border-bottom: 2px solid #222b43; }
-.brand { font-size: 24px; white-space: nowrap; font-family: 'Courier New', monospace; letter-spacing: -1px; }
+.brand { font-size: 30px; white-space: nowrap; font-family: var(--app-font); letter-spacing: -1px; }
 .brand strong { color: white; }
 .brand em { color: #ff4059; font-style: normal; }
-.stage-heading { color: #e5e8f4; font-weight: bold; white-space: nowrap; }
-.progress-badge { background: #0e1829; border: 1px solid #253044; border-radius: 8px; padding: 10px; font-size: 13px; margin-left: auto; white-space: nowrap; }
+.stage-heading { color: #e5e8f4; font-weight: bold; font-size: 20px; white-space: nowrap; }
+.progress-badge { background: #0e1829; border: 1px solid #253044; border-radius: 8px; padding: 10px; font-size: 17px; margin-left: auto; white-space: nowrap; }
 .progress-badge b { color: #ffc236; margin-left: 12px; }
 .players { margin-left: auto; display: flex; gap: 22px; justify-content: flex-end; }
 .app-mission .players { margin-left: 0; }
-.player-badge { display: flex; gap: 6px; align-items: center; min-width: 112px; font-size: 12px; }
+.player-badge { display: flex; gap: 6px; align-items: center; min-width: 112px; font-size: 16px; }
 .player-badge img { width: 43px; height: 54px; object-fit: contain; image-rendering: pixelated; }
 .player-badge small { display: block; margin-top: 5px; color: #9faec8; }
 .game-screen { position: relative; flex: 1 1 auto; min-height: 580px; overflow: hidden; background: radial-gradient(ellipse at 35% 40%,#42304e,#101629 65%,#0a1121); }
@@ -22,38 +25,38 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 #game-area { width: 100%; height: 100%; }
 #game-area canvas { display: block; }
 .app-lobby .game-screen { min-height: 620px; }
-.lobby-mission-card { position: absolute; left: 24px; bottom: 36px; background: #ebf3fa; color: #223456; border: 4px solid #2f5279; border-radius: 10px; padding: 13px 20px; z-index: 3; }
-.lobby-mission-card h2 { font-size: 21px; margin: 5px 0 12px; }
-.lobby-mission-card p { font-size: 13px; margin: 8px 0; }
-.eyebrow { font-weight: bold; letter-spacing: 1px; font-size: 14px; color: #ff536e; }
-.lobby-mission-card .eyebrow { color: #243a63; }
-.lobby-instructions { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); padding: 10px 15px; background: rgba(12,28,56,.88); border-radius: 8px; font-size: 13px; white-space: nowrap; }
-.lobby-footer { background: #101f39; height: 68px; display:flex; flex-shrink:0; justify-content:center; align-items:center; gap:15px; padding: 8px; }
-.lobby-footer button { padding: 11px 20px; border: 0; border-radius: 7px; background:#80e778; font-weight: bold; }
+.lobby-mission-card { position: absolute; left: 24px; bottom: 36px; background: #ebf3fa; color: #223456; border: 4px solid #2f5279; border-radius: 10px; padding: 18px 30px; min-width: 290px; z-index: 3; }
+.lobby-mission-card h2 { font-size: 32px; margin: 6px 0 14px; }
+.lobby-mission-card p { font-size: 21px; margin: 10px 0; }
+.eyebrow { font-weight: bold; letter-spacing: 1px; font-size: 17px; color: #ff536e; }
+.lobby-mission-card .eyebrow { color: #243a63; font-size: 20px; }
+.lobby-instructions { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); padding: 10px 15px; background: rgba(12,28,56,.88); border-radius: 8px; font-size: 17px; white-space: nowrap; }
+.lobby-footer { background: #101f39; height: 68px; display:flex; flex-shrink:0; justify-content:center; align-items:center; gap:15px; padding: 8px; font-size: 18px; }
+.lobby-footer button { padding: 11px 20px; border: 0; border-radius: 7px; background:#80e778; font-weight: bold; font-size: 17px; }
 .lobby-footer .start-button { background: #36b6f0; color: #03101e; }
-.demo-note { font-size: 11px; color: #9eacc7; }
+.demo-note { font-size: 15px; color: #9eacc7; }
 .mission-card { position: absolute; left: 23px; top: 36px; width: min(420px, 38%); display: flex; gap: 14px; padding: 20px 22px; background: rgba(34,7,24,.88); border: 2px solid #ff3159; box-shadow: 0 0 18px #e5324c50, inset 0 0 13px #f32b482a; border-radius: 9px; z-index: 3; }
 .mission-warning { color: #ff4766; font-size: 36px; }
-.mission-card h2 { font-size: 20px; margin: 8px 0 14px; }
-.mission-card p { font-size: 15px; margin: 9px 0; }
+.mission-card h2 { font-size: 24px; margin: 8px 0 14px; }
+.mission-card p { font-size: 18px; margin: 9px 0; }
 .mission-card p span { display: inline-block; color: #a4adc0; width: 24px; font-size: 18px; }
 .mission-card p span.checked { color: #6bdf9b; }
-.station-sign { position: absolute; left: 15%; bottom: 13%; background: rgba(18,18,32,.83); border: 1px solid #ffa83d; color:#ffdba0; box-shadow:0 0 20px #ef8d434b; border-radius: 9px; padding: 11px 17px; z-index: 2; font-weight: bold; letter-spacing: 1px; font-size: 12px; }
+.station-sign { position: absolute; left: 15%; bottom: 13%; background: rgba(18,18,32,.83); border: 1px solid #ffa83d; color:#ffdba0; box-shadow:0 0 20px #ef8d434b; border-radius: 9px; padding: 11px 17px; z-index: 2; font-weight: bold; letter-spacing: 1px; font-size: 15px; }
 .game-chat { position:absolute; left: 18px; bottom: 18px; z-index: 13; width:320px; max-width:40%; color:white; }
 .game-chat.chat-open { padding:11px; background:rgba(8,19,37,.31); border-left:2px solid #6cbadd; border-radius:6px; }
 .game-chat.chat-closed { pointer-events:none; }
-.chat-heading { font-size:12px; font-weight: bold; padding-bottom:8px; border-bottom:1px solid #456481; }
+.chat-heading { font-size:15px; font-weight: bold; padding-bottom:8px; border-bottom:1px solid #456481; }
 .chat-history { display:flex; flex-direction:column; gap:4px; }
 .chat-open .chat-history { height: 145px; overflow:auto; padding:8px 0; scrollbar-width:thin; }
 .chat-closed .chat-history { max-height:100px; overflow:hidden; }
-.chat-line { font-size:12px; line-height:1.5; overflow-wrap:anywhere; text-shadow: 0 1px 3px #000; }
+.chat-line { font-size:16px; line-height:1.5; overflow-wrap:anywhere; text-shadow: 0 1px 3px #000; }
 .chat-line b { color:#7bcefa; }
-.game-chat form input { margin-top:5px; width:100%; border:1px solid #648ba7; padding:9px; background:rgba(7,21,43,.8); color:white; outline:none; }
-.game-chat form small { display:block; text-align:right; font-size:10px; color:#becce1; padding-top:4px; }
+.game-chat form input { margin-top:5px; width:100%; border:1px solid #648ba7; padding:9px; background:rgba(7,21,43,.8); color:white; outline:none; font-size:16px; }
+.game-chat form small { display:block; text-align:right; font-size:13px; color:#becce1; padding-top:4px; }
 @media (max-width: 1180px) {
   .top-bar { gap:12px; padding:8px 12px; }
-  .brand { font-size:19px; }
-  .stage-heading { font-size:12px; }
+  .brand { font-size:24px; }
+  .stage-heading { font-size:16px; }
   .players { gap:8px; }
   .player-badge { min-width: 70px; }
   .player-badge img { width:30px; height:38px; }
@@ -62,8 +65,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   .workspace-explorer { width:125px; }
   .workspace-activity { width:34px; }
   .mission-card { width:38%; padding:10px; }
-  .mission-card h2 { font-size:15px; }
-  .mission-card p { font-size:11px; }
+  .mission-card h2 { font-size:18px; }
+  .mission-card p { font-size:14px; }
   .station-sign { display:none; }
 }
 
@@ -83,7 +86,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   background: #1e1e1e;
   color: #d4d4d4;
   box-shadow: 0 10px 35px #0009;
-  font-family: Arial, sans-serif;
+  font-family: var(--app-font);
 }
 .cr-ide-fullscreen {
   position: fixed;
@@ -103,7 +106,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   padding: 0 10px 0 14px;
   background: #181818;
   border-bottom: 1px solid #3a3a3a;
-  font-size: 13px;
+  font-size: 16px;
 }
 .cr-vs-logo { color: #22a8e8; font-size: 22px; margin-right: 8px; }
 .cr-fullscreen-btn {
@@ -138,10 +141,10 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   padding-top: 10px;
   background: #252526;
   border-right: 1px solid #333;
-  font-size: 12px;
+  font-size: 15px;
   overflow: hidden;
 }
-.cr-explorer-heading { padding: 8px 12px; color: #c8c8c8; font-size: 11px; }
+.cr-explorer-heading { padding: 8px 12px; color: #c8c8c8; font-size: 13px; }
 .cr-folder { padding: 8px 12px; white-space: nowrap; }
 .cr-subfolder { padding-left: 22px; }
 .cr-explorer button {
@@ -153,7 +156,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   background: transparent;
   text-align: left;
   color: #ddd;
-  font-size: 12px;
+  font-size: 15px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -171,7 +174,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   padding: 0 14px;
   background: #252526;
   border-bottom: 1px solid #333;
-  font-size: 12px;
+  font-size: 15px;
 }
 .cr-editor-tab small { color: #999; }
 .cr-monaco-box { flex: 1 1 auto; min-height: 120px; background: #1e1e1e; }
@@ -190,7 +193,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   color: #aaa;
   background: transparent;
   border: 0;
-  font-size: 11px;
+  font-size: 14px;
   cursor: pointer;
 }
 .cr-terminal-tabs button.cr-active { color: #fff; border-bottom: 2px solid #3794ff; }
@@ -201,7 +204,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   border-radius: 4px;
   background: #7744dc;
   color: white;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: bold;
   white-space: nowrap;
   cursor: pointer;
@@ -229,7 +232,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
   padding: 0 9px;
   color: white;
   background: #007acc;
-  font-size: 10px;
+  font-size: 13px;
 }
 @media (max-width: 1100px) {
   .cr-ide { width: 60%; right: 8px; }
@@ -245,9 +248,9 @@ html, body, #root { min-height: 100%; }
 .cr-ide-fullscreen { top:0!important; bottom:0!important; left:0!important; right:0!important; width:100vw!important; height:100vh!important; max-width:none!important; border-radius:0!important; }
 @media (max-width: 720px) {
   .top-bar { gap:6px; padding: 5px 8px; }
-  .brand { font-size:16px; }
+  .brand { font-size:20px; }
   .players { gap:2px; }
-  .player-badge { min-width:40px; font-size:10px; }
+  .player-badge { min-width:40px; font-size:13px; }
   .player-badge img { width:26px; height:34px; }
   .stage-heading { display:none; }
   .cr-ide { width:65%; right:4px; top:8px; bottom:8px; }
@@ -255,7 +258,7 @@ html, body, #root { min-height: 100%; }
   .cr-activity-bar { width:30px; font-size:16px; }
   .cr-ide-fullscreen .cr-explorer { display:block; width:130px; }
   .cr-terminal-tabs { gap:4px; }
-  .cr-terminal-tabs button:not(.cr-run-btn) { font-size:10px; }
+  .cr-terminal-tabs button:not(.cr-run-btn) { font-size:12px; }
   .mission-card { max-width:32%; }
   .lobby-mission-card { left:8px; bottom:52px; }
 }
@@ -272,10 +275,10 @@ html, body, #root { min-height: 100%; }
   border-bottom: 1px solid #252b43;
 }
 .app-mission .brand {
-  font-size: 27px;
+  font-size: 32px;
 }
 .app-mission .stage-heading {
-  font-size: 18px;
+  font-size: 22px;
 }
 
 /* Dark purple room */
@@ -301,15 +304,15 @@ html, body, #root { min-height: 100%; }
   line-height: 1.3;
 }
 .app-mission .eyebrow {
-  font-size: 15px;
+  font-size: 18px;
 }
 .app-mission .mission-card h2 {
-  font-size: 20px;
+  font-size: 24px;
   margin: 8px 0 13px;
 }
 .app-mission .mission-card p {
   margin: 9px 0;
-  font-size: 15px;
+  font-size: 18px;
 }
 
 /* Role label is now drawn at the workstation in MissionScene.ts */
@@ -332,7 +335,7 @@ html, body, #root { min-height: 100%; }
   height: 49px;
   background: linear-gradient(180deg, #202b40, #172135);
   border-bottom: 1px solid #38455f;
-  font-size: 15px;
+  font-size: 17px;
 }
 .app-mission .cr-activity-bar {
   width: 47px;
@@ -344,14 +347,14 @@ html, body, #root { min-height: 100%; }
   width: 178px;
   background: #111c31;
   border-right: 1px solid #33435d;
-  font-size: 13px;
+  font-size: 16px;
 }
 .app-mission .cr-explorer-heading {
   color: #bcc8d9;
-  font-size: 12px;
+  font-size: 14px;
 }
 .app-mission .cr-explorer button {
-  font-size: 13px;
+  font-size: 16px;
 }
 .app-mission .cr-explorer button.cr-selected {
   background: #1d426f;
@@ -359,7 +362,7 @@ html, body, #root { min-height: 100%; }
 .app-mission .cr-editor-tab {
   background: #1d2a41;
   border-bottom: 1px solid #304665;
-  font-size: 13px;
+  font-size: 16px;
 }
 .app-mission .cr-terminal-tabs {
   background: #101a2c;
@@ -367,7 +370,7 @@ html, body, #root { min-height: 100%; }
   height: 47px;
 }
 .app-mission .cr-terminal-tabs button:not(.cr-run-btn) {
-  font-size: 12px;
+  font-size: 15px;
   color: #c3d0e1;
 }
 .app-mission .cr-terminal-output {
@@ -381,7 +384,7 @@ html, body, #root { min-height: 100%; }
   background: #853cf1;
   color: white;
   padding: 9px 16px;
-  font-size: 13px;
+  font-size: 16px;
   box-shadow: 0 0 12px rgba(143, 59, 255, .45);
 }
 .app-mission .cr-status-bar {
@@ -414,8 +417,8 @@ html, body, #root { min-height: 100%; }
     padding: 13px;
     min-height: 165px;
   }
-  .app-mission .mission-card h2 { font-size: 16px; }
-  .app-mission .mission-card p { font-size: 12px; }
+  .app-mission .mission-card h2 { font-size: 19px; }
+  .app-mission .mission-card p { font-size: 15px; }
   .app-mission .cr-explorer { width: 140px; }
   .app-mission .cr-ide { right: 9px; }
 }
@@ -434,22 +437,22 @@ html, body, #root { min-height: 100%; }
 
 /* Deploy to Production (inside the mission card, unlocks at 3/3) */
 .deploy-panel { margin-top: 14px; padding-top: 12px; border-top: 1px solid #ff315955; display: flex; flex-direction: column; gap: 7px; }
-.deploy-button { padding: 11px 16px; border: 0; border-radius: 7px; background: #6bdf9b; color: #05170d; font-weight: bold; font-size: 14px; cursor: pointer; box-shadow: 0 0 16px #6bdf9b66; }
+.deploy-button { padding: 11px 16px; border: 0; border-radius: 7px; background: #6bdf9b; color: #05170d; font-weight: bold; font-size: 17px; cursor: pointer; box-shadow: 0 0 16px #6bdf9b66; }
 .deploy-button:disabled { opacity: .6; cursor: wait; }
-.deploy-waiting { font-size: 13px; color: #ffdba0; }
-.deploy-error { font-size: 12px; color: #ff8da1; }
+.deploy-waiting { font-size: 16px; color: #ffdba0; }
+.deploy-error { font-size: 15px; color: #ff8da1; }
 
 /* Results screen after a successful deploy */
 .results-screen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 12; width: min(640px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow: auto; padding: 24px 28px; background: rgba(9, 22, 38, .95); border: 2px solid #6bdf9b; border-radius: 12px; box-shadow: 0 0 28px #6bdf9b44; color: white; text-align: center; }
 .results-screen .eyebrow { color: #6bdf9b; }
-.results-screen h2 { font-size: 26px; margin: 8px 0 6px; }
-.results-time { font-size: 15px; color: #c9d4e6; margin: 0 0 18px; }
-.results-time b { color: #ffc236; font-size: 18px; }
+.results-screen h2 { font-size: 32px; margin: 8px 0 6px; }
+.results-time { font-size: 18px; color: #c9d4e6; margin: 0 0 18px; }
+.results-time b { color: #ffc236; font-size: 22px; }
 .results-team { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 18px; text-align: left; }
 .results-player { display: flex; gap: 10px; padding: 12px; background: #0e1829; border: 1px solid #253044; border-radius: 9px; }
 .results-player img { width: 40px; height: 52px; object-fit: contain; image-rendering: pixelated; flex-shrink: 0; }
-.results-player b { display: block; font-size: 14px; }
-.results-player small { display: block; color: #9faec8; font-size: 11px; margin-top: 2px; letter-spacing: 1px; }
-.results-player p { margin: 7px 0 0; font-size: 12px; line-height: 1.4; }
+.results-player b { display: block; font-size: 18px; }
+.results-player small { display: block; color: #9faec8; font-size: 14px; margin-top: 2px; letter-spacing: 1px; }
+.results-player p { margin: 7px 0 0; font-size: 15px; line-height: 1.4; }
 .results-player .results-skill { color: #7bcefa; }
-.results-leave { padding: 11px 20px; border: 0; border-radius: 7px; background: #36b6f0; color: #03101e; font-weight: bold; cursor: pointer; display: block; margin: 0 auto 8px; }
+.results-leave { padding: 11px 20px; border: 0; border-radius: 7px; background: #36b6f0; color: #03101e; font-weight: bold; font-size: 17px; cursor: pointer; display: block; margin: 0 auto 8px; }

@@ -421,7 +421,7 @@ export default function App() {
             {lobbyError && <div style={{ position: 'absolute', top: 14, left: '50%',
               transform: 'translateX(-50%)', zIndex: 15, background: '#4c2235',
               border: '1px solid #ef637c', borderRadius: 6,
-              color: 'white', padding: '9px 15px', fontSize: 13 }}>⚠ {lobbyError}</div>}
+              color: 'white', padding: '9px 15px', fontSize: 16 }}>⚠ {lobbyError}</div>}
           </>
         ) : stage === 'mission' ? (
           <>
