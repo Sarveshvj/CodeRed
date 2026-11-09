@@ -109,6 +109,12 @@ The project combines our team's design decisions with AI-assisted implementation
 - **Google Gemini**: AI-powered code review and feedback.
 - **Hack the Change YYC 2026**: The hackathon that inspired this project.
 
+## Copyright
+
+Copyright © 2026 the CODE RED! team. All rights reserved.
+
+Third-party software and assets are subject to their respective licenses.
+
 ---
 
 **Project**: CODE RED!  
